@@ -14,6 +14,8 @@ jobs:
           node-version: '22'
       - name: Validate shared modules
         run: |
-          for file in docs/*.mjs ai/*.mjs scripts/*.mjs worker.mjs; do node --check "$file"; done
+          find docs ai scripts -name '*.mjs' -print0 | xargs -0 -n1 node --check
+          node --check worker.mjs
+          node --check worker-v3.mjs
       - name: Test without installing packages
         run: node --test tests/*.test.mjs

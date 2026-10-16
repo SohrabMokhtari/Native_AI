@@ -1,0 +1,16 @@
+{
+  "base_commit": "6b8d87d951ad9f4f734620223a9b62e6da36747e",
+  "new_node_tests": {
+    "total": 114,
+    "passed": 114,
+    "failed": 0,
+    "tap_sha256": "4679ecd2ee4100f170b244a1f95f0e316d5fbb4f988e99155f7b34e1f3caffc0"
+  },
+  "dom_checks": {
+    "total": 33,
+    "passed": 33,
+    "method": "Injected local assets, memory storage, mocked provider/widget in draft suite. Not direct-navigation or real browser persistence."
+  },
+  "live_groq_v3": false,
+  "production_deployed": false
+}
