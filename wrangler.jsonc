@@ -13,7 +13,7 @@
     "AI_PROVIDER": "groq",
     "AI_MODEL": "openai/gpt-oss-120b",
     "TURNSTILE_SITE_KEY": "0x4AAAAAAFYo6LZ0AYNBMzTp",
-    "COMPOSABLE_AI_ENABLED": "false",
+    "COMPOSABLE_AI_ENABLED": "true",
     "V3_MAX_CALLS": "3"
   },
   "ratelimits": [
