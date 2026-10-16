@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Native AI · Composable studio</title><link rel="stylesheet" href="./studio.css"><script type="module" src="./studio.mjs"></script></head>
+<body>
+<header class="studio-header"><a href="../" class="brand"><span>N</span> Native AI <small>COMPOSABLE LAB</small></a><a href="../" class="subtle">Original builder ↗</a></header>
+<section class="intro"><p class="eyebrow">LESS TEMPLATE. MORE POSSIBILITY.</p><h1>Give your idea room to grow.</h1><p>Describe the experience. Build the behavior. Make it yours.</p></section>
+<main class="workspace">
+<section class="conversation" aria-label="App construction"><div class="panel-head"><strong>Your build space</strong><span id="mode" class="pill">Checking connection</span></div>
+<div id="messages" role="log" aria-live="polite"></div>
+<div class="examples"><p>Explore authored examples · no AI call</p><button id="dashboard">A focused dashboard ↗</button><button id="quiz">A little curiosity ↗</button></div>
+<form id="prompt-form"><label for="prompt">What should your app do?</label><textarea id="prompt" maxlength="3000" rows="5" placeholder="Add a Focus view, highlight overdue tasks, or change the entire layout…"></textarea><div id="challenge"></div><button id="build" type="submit" class="primary">Build a draft →</button><p id="budget" class="fine">No request runs without a configured hosted connection.</p></form>
+<p class="privacy">Live builds send the app definition, your prompt and the last eight conversation messages to the provider. Saved records and runtime state are not sent. Do not put secrets into prompts or design constants.</p>
+</section>
+<section class="preview-panel"><div class="panel-head"><strong>Executable preview</strong><div class="toolbar"><button id="desktop" aria-pressed="true">Desktop</button><button id="mobile" aria-pressed="false">Mobile</button><button id="export" disabled>Get app ↗</button></div></div>
+<div id="draft-bar" hidden><div><strong>Draft, not applied</strong><p id="draft-details"></p></div><button id="apply" class="primary">Apply draft</button><button id="discard">Discard</button></div>
+<div id="app-root"><div class="empty"><span class="empty-symbol">✦</span><h2>Not just another template.</h2><p>Compose screens, calculations and interactions with the same shared runtime.</p><p class="fine">Choose an authored example, import your existing app, or connect hosted AI.</p></div></div>
+<div class="workspace-footer"><span id="save-state">Local workspace · separate from the original builder</span><div><button id="import-legacy">Copy original workspace</button><button id="backup">Backup</button><button id="import">Import</button><button id="undo" disabled>Undo design</button><button id="new">New app</button></div></div>
+<details class="checks"><summary>Checks and change trace</summary><pre id="checks">No proposed changes yet.</pre><p>Checks cover structure, executable expressions and supplied fictional tests. They do not prove intent or replace independent acceptance tests. The model does not see screenshots.</p></details>
+</section>
+</main>
+<input type="file" id="import-file" accept=".json,.native.json,application/json" hidden>
+<footer class="page-footer">Native AI / experimental composable runtime · Local data only · No native app-store packaging</footer>
+</body></html>

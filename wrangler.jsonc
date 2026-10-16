@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "native-ai",
-  "main": "worker.mjs",
+  "main": "worker-v3.mjs",
   "compatibility_date": "2026-10-15",
   "assets": {
     "directory": "./docs",
@@ -12,7 +12,9 @@
     "PUBLIC_AI_ENABLED": "true",
     "AI_PROVIDER": "groq",
     "AI_MODEL": "openai/gpt-oss-120b",
-    "TURNSTILE_SITE_KEY": "0x4AAAAAAFYo6LZ0AYNBMzTp"
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAFYo6LZ0AYNBMzTp",
+    "COMPOSABLE_AI_ENABLED": "false",
+    "V3_MAX_CALLS": "3"
   },
   "ratelimits": [
     {
