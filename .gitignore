@@ -12,3 +12,6 @@ evidence/invalid-backup.json
 evidence/pwa-export/
 evidence/sample-app*
 evidence/server.log
+
+# Commit placeholders, never the actual .dev.vars or .env file.
+!.dev.vars.example

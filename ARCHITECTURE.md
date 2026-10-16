@@ -24,9 +24,13 @@ A storage error rejects the save before the current in-memory state is replaced.
 
 ## Hosted AI boundary
 
-The browser sends only prompt, current design, and challenge token. The gateway uses a server-held key, a fixed provider endpoint, bounded input/output, exact-origin check, edge-IP and aggregate rate-limit bindings, and verified Turnstile hostname/action. A structured response is independently validated. Unsupported, failed, incomplete, and malformed responses are not applied. The provider adapter was exercised with mocks only.
+The browser sends only prompt, current design, and challenge token. The gateway uses a server-held key, a fixed provider endpoint, bounded input/output, exact-origin check, edge-IP and aggregate rate-limit bindings, and verified Turnstile hostname/action. A structured response is independently validated. Unsupported, failed, incomplete, and malformed responses are not applied. The server-only `ai/provider.mjs` supports Groq Chat Completions (the default `openai/gpt-oss-120b`) and the existing OpenAI Responses route. Adapters were exercised with mocks only; real inference remains unverified.
 
-The browser performs the populated-data compatibility check because the gateway never receives those records. Client-side checks protect a user's local workspace from accidental loss; they are not a server authorization system. No upstream error bodies or provider keys are returned. `store:false` is requested, but is not a blanket claim about provider data retention.
+The browser performs the populated-data compatibility check because the gateway never receives those records. Client-side checks protect a user's local workspace from accidental loss; they are not a server authorization system. No upstream error bodies or provider keys are returned. The OpenAI route requests `store:false`; Groq does not receive that unsupported parameter. Neither is a blanket claim about provider retention. Review the chosen provider's current privacy settings.
+
+The Groq payload uses strict JSON Schema, non-streaming output, low reasoning effort and at most 4,096 completion tokens. The full provider response is bounded to 256 KiB before parsing. A truncated completion, refusal, invalid model, or incompatible ID/type/select-choice edit is rejected. Each build makes at most one model call, with a 50-second deadline and no automatic retry or cross-provider fallback. Provider 429 responses map to an explicit quota error with a bounded Retry-After header.
+
+`AI_PROVIDER` explicitly selects a provider. For older deployments without that variable, an OpenAI-only secret preserves the old path; a Groq-only secret selects Groq. Two secrets without an explicit selection fail closed. `/api/config` publishes only mode, public challenge key, provider and model, not credentials. A live config means settings are present, not that provider connectivity has been verified.
 
 ## Export and delivery
 

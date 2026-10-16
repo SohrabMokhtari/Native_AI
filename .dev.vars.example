@@ -1,0 +1,8 @@
+# OPTIONAL maintainer-local template only. Copy to ignored .dev.vars and fill privately.
+# Public visitors never supply keys. Cloud hosting uses encrypted Worker secrets.
+AI_PROVIDER=groq
+AI_MODEL=openai/gpt-oss-120b
+PUBLIC_AI_ENABLED=false
+GROQ_API_KEY=
+TURNSTILE_SECRET=
+TURNSTILE_SITE_KEY=

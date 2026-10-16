@@ -1,0 +1,17 @@
+{
+  "version": "0.2.1",
+  "date": "2026-10-16",
+  "baseCommit": "1d36706efb732cb97e0cbee05c7dd911086430a3",
+  "command": "node --test tests/*.test.mjs",
+  "tests": 150,
+  "passed": 150,
+  "failed": 0,
+  "skipped": 0,
+  "previousTests": 74,
+  "newTests": 76,
+  "providerMode": "mocked",
+  "liveGroqCall": "not run: no GROQ_API_KEY configured",
+  "deployment": "not performed",
+  "browserChecks": "not rerun; browser source unchanged",
+  "tapSha256": "ccd7ddc0aacdb7ed476b29209ab54dfff5c3181adae1d51f4b0f804dc88341f3"
+}

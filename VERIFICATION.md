@@ -1,4 +1,21 @@
-# Verification — Native AI v0.2
+# Verification — Native AI v0.2.1 / Groq integration
+
+## Current update: October 16, 2026
+
+- **150/150 Node automated tests passed:** the existing 74 checks plus 76 Groq/provider and acceptance-script checks. No test was skipped.
+- Groq tests use synthetic Chat Completions responses, not actual model inference. They exercise the strict schema request, model/provider selection, missing-config rejection, Turnstile-to-provider flow, successful new design, edits preserving sample records, export compatibility, unsupported requests, malformed/truncated/refused responses, and rejection of destructive ID/type/choice changes.
+- Quota, credential and upstream/network errors were injected. The tests assert no automatic retry, no provider fallback, sanitized errors, bounded response parsing, and a Retry-After hint for quota failures. Browser assets are checked for provider credential references and server-adapter imports.
+- All JavaScript modules passed syntax checks; git diff whitespace checks passed. The local baseline tree matched the repository's published v0.2 tree before editing.
+- The maintainer smoke script ran in dry mode and its missing-key guard was tested. It issues no request without explicit --live authorization and a privately supplied key.
+- Coverage from synthetic tests: provider adapter 100% lines / 93.50% branches. This is test coverage, not evidence of model quality or security assurance.
+
+**Live Groq inference was not run: no GROQ_API_KEY was configured.** Cloudflare hosting, secrets, Turnstile and billing settings were not changed. The checked-in configuration leaves public AI disabled. Browser runtime and UI files are unchanged by this update; the earlier browser checks below were not rerun and are historical evidence only.
+
+The new evidence/groq-tests.json records the test counts and SHA-256 of the local TAP report. CI repeats only offline tests. No live end-to-end build or efficiency improvement is claimed.
+
+---
+
+# Historical verification — Native AI v0.2
 
 ## Executed
 

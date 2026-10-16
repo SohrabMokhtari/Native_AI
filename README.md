@@ -4,7 +4,7 @@
 
 The goal is **zero coding and zero developer-tool installation for the person building an app**. Human-readable source code is optional as an intermediate representation, not forbidden. The shared engine is currently JavaScript; each supported app is a validated executable structure rather than a separately generated codebase.
 
-## What exists today — v0.2 public prototype
+## What exists today — v0.2.1 public prototype
 
 A browser-first studio with responsive desktop/mobile previews, local records, validated design changes, and portable exports. No frontend dependencies, package installation, build step, Python server, Node server, or user API key is required to use a **hosted** studio.
 
@@ -33,6 +33,10 @@ Runnable links contain the app design in a URL fragment, not records. Recipients
 
 ## Public AI without asking visitors for keys
 
+**Default: Groq with `openai/gpt-oss-120b`.** The server-only adapter requests strict JSON-schema output and validates the result independently. Set `GROQ_API_KEY` as a hosting secret, not in this repository or the browser. The checked-in configuration selects Groq but leaves `PUBLIC_AI_ENABLED=false` until the owner completes setup. See [DEPLOYMENT.md](DEPLOYMENT.md#groq-setup).
+
+There are no automatic retries, provider fallbacks, or paid-plan upgrades. Quota failures are reported without changing the app. Free usage depends on the operator account and current provider limits; the app cannot determine or guarantee that an account is on a free plan. The existing OpenAI adapter remains an explicitly configurable alternative, not a fallback.
+
 Deploy the included Cloudflare Worker with static assets. Configure a model, server-held provider secret, Turnstile, and rate-limit bindings, then explicitly enable public AI. It fails closed if these requirements are missing. Until that deployment is configured, the website remains an honestly labeled starter builder.
 
 There is no magic removal of infrastructure: hosted AI has an operator cost; shared databases and native signing/build services would be additional capabilities. These should be hidden from the end user's workflow, not misrepresented as nonexistent. **Zero installs does not mean zero hosting or inference costs.**
@@ -45,14 +49,15 @@ The runtime uses allowlisted operations and text rendering, not `eval`, generate
 
 ## Verification
 
-74 Node tests pass. 25 restricted-environment DOM/packaging checks pass. Direct navigation was blocked by managed browser policy; DOM tests used a test-only memory storage adapter. Actual live model calls, real browser storage/reload, deployed service-worker behavior, mobile installation, and cloud deployment are **not yet verified**. See [VERIFICATION.md](VERIFICATION.md).
+150 Node tests pass after the Groq integration (74 existing plus 76 new checks). The 25 restricted-environment DOM/packaging checks were run for v0.2, not rerun for this provider update. Direct navigation was blocked by managed browser policy; DOM tests used a test-only memory storage adapter. Actual live model calls, real browser storage/reload, deployed service-worker behavior, mobile installation, and cloud deployment are **not yet verified**. See [VERIFICATION.md](VERIFICATION.md).
 
 For maintainers only, Node 22+ can run `node --test tests/*.test.mjs` with no package installation. Optional browser tests require Playwright in the test environment, not in the product. A direct-navigation acceptance suite is included for an unrestricted test machine.
 
 ## Repository map
 
 - `docs/`: deployable browser studio, model validator, shared renderer, export packaging, and runnable-link viewer.
-- `worker.mjs`, `wrangler.jsonc`: optional same-origin AI gateway and cloud configuration.
+- `worker.mjs`, `ai/provider.mjs`, `wrangler.jsonc`: protected same-origin gateway, server-only Groq/OpenAI adapters, and cloud configuration.
+- `scripts/check-groq.mjs`: opt-in maintainer acceptance probe; no API calls unless `--live` is supplied.
 - `tests/`: model, migration, export, gateway, and browser checks.
 - [ARCHITECTURE.md](ARCHITECTURE.md): representation and execution boundaries.
 - [ROADMAP.md](ROADMAP.md): path toward broader app construction and native delivery.

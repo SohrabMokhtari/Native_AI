@@ -8,7 +8,7 @@ const request=(body={prompt:'Make a task board',current:null,token:'proof'},head
 const response=v=>new Response(JSON.stringify(v),{status:200,headers:{'Content-Type':'application/json'}});
 function mock(result={status:'ready',message:'A local task board.',app:starter('tasks')}){const calls=[];const fetcher=async(url,init)=>{calls.push({url,init});return url.includes('siteverify')?response({success:true,hostname:'native-ai.example',action:'generate'}):response({status:'completed',output:[{content:[{type:'output_text',text:JSON.stringify(result)}]}]});};return {fetcher,calls};}
 test('unconfigured deployment defaults to starter mode',async()=>{const r=await handleRequest(new Request(origin+'/api/config'),{});assert.deepEqual(await r.json(),{mode:'starter'});});
-test('live config exposes only public site key',async()=>{const r=await handleRequest(new Request(origin+'/api/config'),env());assert.deepEqual(await r.json(),{mode:'live',siteKey:'public-site-key'});});
+test('live config exposes only public metadata, never a secret',async()=>{const r=await handleRequest(new Request(origin+'/api/config'),env());assert.deepEqual(await r.json(),{mode:'live',siteKey:'public-site-key',provider:'openai',model:'test-model'});});
 test('disabled AI fails closed',async()=>{const e=env();e.PUBLIC_AI_ENABLED='false';assert.equal((await handleRequest(request(),e)).status,503);});
 test('missing rate limit binding fails closed',async()=>{const e=env();delete e.GENERATION_LIMITER;assert.equal((await handleRequest(request(),e)).status,503);});
 test('cross-origin request denied',async()=>assert.equal((await handleRequest(request(undefined,{Origin:'https://evil.example'}),env())).status,403));
