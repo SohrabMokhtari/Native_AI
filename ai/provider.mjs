@@ -147,14 +147,19 @@ export async function generateApp({ prompt, current = null }, env, fetcher = fet
   }
   try {
     const response = await fetcher(config.endpoint, {
-      method: 'POST', redirect: 'error',
+      // workerd rejects redirect:'error'. Never follow redirects with credentials.
+      method: 'POST', redirect: 'manual',
       headers: { Authorization: `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(50000),
       body: JSON.stringify(payloadFor(config, prompt, current)),
     });
     if (!response.ok) {
       // Never return/log raw provider bodies; these can include prompt fragments or credential details.
-      await response.body?.cancel();
+      // Cleanup must not conceal the actual HTTP status if cancel() itself fails.
+      try { await response.body?.cancel(); } catch {}
+      if (response.status >= 300 && response.status < 400) {
+        throw new ProviderError('AI_REDIRECT_BLOCKED', 'The AI endpoint returned an unexpected redirect. It was not followed. No changes made.');
+      }
       if (response.status === 429) {
         const raw = response.headers.get('Retry-After');
         const retry = raw && /^\d+$/.test(raw) ? Math.min(86400, Math.max(1, Number(raw))) : 60;
@@ -172,6 +177,9 @@ export async function generateApp({ prompt, current = null }, env, fetcher = fet
     return validateBuildResult(result, current);
   } catch (error) {
     if (error instanceof ProviderError) throw error;
-    throw new ProviderError('AI_UNAVAILABLE', 'Build service unavailable or timed out. No changes made.', 503);
+    if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+      throw new ProviderError('AI_TIMEOUT', 'The AI request timed out. Try again later. No changes made.', 504);
+    }
+    throw new ProviderError('AI_UNAVAILABLE', 'The AI request failed before a usable response was received. No changes made.', 503);
   }
 }
