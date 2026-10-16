@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "native-ai",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-15",
+  "assets": { "directory": "./docs", "binding": "ASSETS", "run_worker_first": true },
+  "vars": { "PUBLIC_AI_ENABLED": "false" },
+  "ratelimits": [
+    { "name": "GENERATION_LIMITER", "namespace_id": "10701", "simple": { "limit": 5, "period": 60 } },
+    { "name": "GLOBAL_LIMITER", "namespace_id": "10702", "simple": { "limit": 25, "period": 60 } }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "passed": 25,
+  "checks": [
+    "Starter labels its non-AI mode",
+    "Task starter renders from plain language",
+    "Create records and board groups",
+    "Workspace written to storage adapter",
+    "Conversational rename",
+    "Theme change",
+    "Optional field extension",
+    "Rename applied",
+    "Theme applied",
+    "Unsupported request preserves app",
+    "Search filters records",
+    "Edit moves record to correct board column",
+    "Phone preview works",
+    "Malicious-looking record text is not HTML or code",
+    "Delete removes intended record",
+    "Export choices visible",
+    "UI restores saved workspace through storage adapter",
+    "390px mobile layout has no horizontal overflow",
+    "No uncaught errors in tested studio interactions",
+    "App export excludes record values",
+    "Export includes no external script dependencies",
+    "Exported runtime renders with network disabled",
+    "Exported runtime creates records without network",
+    "Browser ZIP export passes independent CRC check",
+    "PWA package has its required files"
+  ],
+  "method": "Local DOM rendering in Chromium with a test-only in-memory localStorage adapter. Exported runtime injected locally with network calls disabled. Direct navigation is blocked by managed browser policy; policy was not changed. ZIP verified independently.",
+  "not_tested": [
+    "Real browser localStorage and page reload",
+    "Direct file:// export navigation/downloads",
+    "Real AI provider",
+    "Cloudflare deployment/Turnstile",
+    "Service-worker caching and PWA installation",
+    "Safari/iOS/Android devices",
+    "App-store builds",
+    "Cloud sync"
+  ]
+}

@@ -1,0 +1,14 @@
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+node_modules/
+.wrangler/
+.DS_Store
+__pycache__/
+*.native.json
+evidence/test-state.json
+evidence/invalid-backup.json
+evidence/pwa-export/
+evidence/sample-app*
+evidence/server.log

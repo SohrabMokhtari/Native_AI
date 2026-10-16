@@ -1,0 +1,12 @@
+{
+  "command": "node --test tests/*.test.mjs",
+  "tests": 74,
+  "passed": 74,
+  "failed": 0,
+  "cancelled": 0,
+  "skipped": 0,
+  "provider_integration": "mocked; no live model call",
+  "tap_sha256": "03069aee9a9ddd117bbe77ad2d67f217a31bc09cc6b493203a34cb4d1ecd63b0",
+  "full_log": "evidence/unit-tests.tap in downloadable handoff archive",
+  "scope": "Core, record validation, migration, export, gateway request and error handling."
+}

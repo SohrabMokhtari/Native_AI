@@ -1,0 +1,19 @@
+name: Verify runtime
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate shared modules
+        run: |
+          for file in docs/*.mjs worker.mjs; do node --check "$file"; done
+      - name: Test without installing packages
+        run: node --test tests/*.test.mjs
