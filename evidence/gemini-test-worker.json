@@ -19,8 +19,8 @@
     "freshConfigNetworkCalls": 0,
     "privateLocalConfigCopied": false
   },
-  "deployed": "NOT RUN by agent",
-  "cloudSecretsOrVariablesChanged": "NOT RUN by agent",
+  "deployed": "PASS: owner-operated separate test Worker; agent triggered the connected feature build and checked public HTTP endpoints.",
+  "cloudSecretsOrVariablesChanged": "Owner configured test-only dashboard secrets and runtime variables; no agent secret access or direct settings write.",
   "branch": "feat/gemini-efficient-builder",
-  "cloudBrowserProviderRoundTrip": "NOT RUN"
+  "cloudBrowserProviderRoundTrip": "PASS: owner screenshot/manual confirmations for one theme edit; see gemini-deployed-smoke.json."
 }

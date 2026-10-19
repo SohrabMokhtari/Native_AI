@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-19",
+  "origin": "https://native-ai-gemini-test.mokhtari-sohrab.workers.dev",
+  "scope": "Manual deployed theme edit to an authored planner example, followed by Apply/reload, post-edit record storage and standalone export open/use.",
+  "deployment": {
+    "target": "native-ai-gemini-test",
+    "configuration": "wrangler.gemini-test.jsonc",
+    "branch": "feat/gemini-efficient-builder",
+    "buildTriggerCommit": "aa7648cd6a8ea487b80887b7d5a38913112328c2",
+    "deployedCodeCommit": "Not independently captured",
+    "setup": "Owner created Worker and configured encrypted secrets, test-host Turnstile and runtime enablement through the dashboard; agent pushed the connected feature-branch build trigger."
+  },
+  "agentReadOnlyChecks": {
+    "config": {
+      "path": "/api/v3/config",
+      "status": 200,
+      "mode": "live",
+      "provider": "gemini",
+      "model": "gemini-3.8-flash",
+      "maxCalls": 3,
+      "maxCompletionTokens": 8192,
+      "deadlineMs": 55000
+    },
+    "studio": {
+      "path": "/v3/",
+      "status": 200,
+      "contentType": "text/html"
+    }
+  },
+  "ownerBrowserObservations": {
+    "source": "Owner-supplied studio screenshot and subsequent chat confirmations; no agent live browser control.",
+    "turnstile": "Screenshot displays Success",
+    "request": "change theme to light",
+    "sourceApp": "Authored planner example",
+    "draft": {
+      "ready": true,
+      "appliedAtScreenshot": false,
+      "suppliedTests": 3,
+      "modelCalls": 1
+    },
+    "themeAfterApplyAndReload": "Owner confirmed persisted",
+    "postEditTaskAfterReload": "Owner confirmed persisted",
+    "downloadedStandaloneHTML": "Owner confirmed opens and works"
+  },
+  "agentInferenceRequests": 0,
+  "agentPrivateCredentialReads": 0,
+  "billingChangesByAgent": 0,
+  "productionConfigurationChanged": false,
+  "limitations": [
+    "Single theme edit; not general application-quality or cost evidence",
+    "No pre-existing records in the shown draft; live edit preserving populated records unverified",
+    "New test task was added after the edit",
+    "Downloaded HTML was not supplied to or inspected by the agent",
+    "Raw provider exchange, usage and latency were not captured for the browser request",
+    "No automated deployed browser suite, hosted creation from scratch or matched provider comparison",
+    "Live stalled-provider timeout and CLI heartbeat paths remain unverified"
+  ]
+}

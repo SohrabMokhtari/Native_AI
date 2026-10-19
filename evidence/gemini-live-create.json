@@ -47,8 +47,8 @@
     "Owner-reported smoke result; raw generated app unavailable",
     "New-app fixture starts without records; no evidence for live record-preserving edits",
     "Exported means HTML constructed and checked in memory, not a saved file or browser launch",
-    "No deployed Worker, real Turnstile or browser-provider round trip verified",
+    "This CLI result does not exercise a deployed Worker or Turnstile; later deployed edit evidence is recorded separately",
     "No matched baseline/optimized Groq comparison",
-    "No live rerun after subsequent timeout/progress changes"
+    "No later CLI evaluation after timeout/progress changes was captured; a deployed theme-edit smoke is recorded separately"
   ]
 }

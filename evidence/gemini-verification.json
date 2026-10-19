@@ -10,9 +10,9 @@
     "fail": 0
   },
   "syntaxModules": 38,
-  "tapSHA256": "bf529b9321d0b85d2beacd85f91017556406a81b7498f5e836beaf969b28212c",
-  "liveProvider": "Owner-reported optimized-gemini/create PASS: two calls, one repair, two supplied tests plus independent acceptance/export, 47571 ms. Earlier failed attempts retained in documentation. No matched provider comparison. Timeout/progress follow-up live rerun NOT RUN; no agent live calls or credential reads.",
-  "deployedEndToEnd": "NOT RUN",
+  "tapSHA256": "41b42a9e0bbd10908b087ddbac662c5d80b4a366773d49b8224a104e5340f478",
+  "liveProvider": "Owner-reported direct Gemini create PASS: two calls, one repair, two supplied tests plus independent acceptance/export, 47571 ms. Later owner-operated deployed planner theme edit PASS: screenshot reports one call/three supplied tests; owner confirmed Apply/reload, post-edit task storage and standalone open/use. No matched provider comparison or live stalled-provider/CLI-progress verification; no agent inference calls or private credential reads.",
+  "deployedEndToEnd": "PASS: owner-operated manual theme-edit smoke on separate test Worker. Agent independently checked public config/studio HTTP only; see gemini-deployed-smoke.json.",
   "followupBaselineTests": {
     "pass": 375,
     "fail": 0
@@ -33,6 +33,6 @@
     "configuration": "wrangler.gemini-test.jsonc",
     "dryRun": "PASS",
     "freshConfigMode": "disabled",
-    "deployed": "NOT RUN by agent"
+    "deployed": "PASS: owner-operated setup and connected feature-branch build; public config/studio HTTP checked by agent."
   }
 }
