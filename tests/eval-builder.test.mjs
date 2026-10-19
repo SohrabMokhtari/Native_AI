@@ -2,6 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {evaluate,parseArgs} from '../scripts/eval-builder.mjs';
 import {CASES,accept,taskWorkspace} from '../scripts/eval-cases.mjs';
 import {preflight} from '../docs/v3/checks.mjs';
+import {dashboardExample} from '../docs/v3/examples.mjs';
 test('evaluation defaults dry and touches no credentials or network',async()=>{let calls=0;const r=await evaluate(parseArgs([]),{},()=>{calls++;throw new Error();});assert.equal(calls,0);assert.equal(r.liveResults,'NOT RUN');assert.equal(r.configurations.length,3);assert.equal(r.cases.length,8);assert.equal(r.cases.filter(c=>c.heldOut).length,1);});
 for(const args of [['--live'],['--live','--max-calls=100','--max-tokens=4096'],['--config=other'],['--case=other'],['--typo']])test('evaluation rejects unsafe/unknown arguments '+args.join(' '),()=>assert.throws(()=>parseArgs(args)));
 test('live missing credential guard runs before network',async()=>{let calls=0;await assert.rejects(evaluate(parseArgs(['--live','--config=optimized-gemini','--case=create','--max-calls=3','--max-tokens=8192']),{},()=>{calls++;}));assert.equal(calls,0);});
@@ -22,4 +23,13 @@ test('evaluation failures expose local repair trace and charge basis without pri
   const row=r.results[0];assert.equal(calls,3);assert.equal(row.error,'AI_BUDGET_EXCEEDED');assert.equal(row.budgetLimit,'calls');assert.equal(row.trace.length,3);assert.match(row.trace[0].error.message,/payload is not JSON/);
   assert.equal(row.buildUsage.turns[0].completionChargeBasis,'reported-total-minus-input-upper-bound');assert.equal(row.buildUsage.turns[0].reported.thinkingTokens,null);
   assert.doesNotMatch(JSON.stringify(r),/never-print-this-secret|private-opaque-signature|Synthetic trace test/);
+});
+test('evaluation retains failed-check evidence when repair receives HTTP 503',async()=>{
+ const p=dashboardExample();p.tests[0].expect[0].equals='private-expected-marker';let calls=0;
+ const result=await evaluate(parseArgs(['--live','--config=optimized-gemini','--case=create','--max-calls=3','--max-tokens=12288']),{GEMINI_API_KEY:'private-fixture-credential'},async()=>{
+   calls++;if(calls===2)return new Response(null,{status:503});
+   return Response.json({candidates:[{finishReason:'STOP',content:{role:'model',parts:[{functionCall:{name:'submit_app',args:{payload:JSON.stringify({program:p}),message:'Private synthetic response label',revision:0}},thoughtSignature:'private-continuation'}]}}],usageMetadata:{promptTokenCount:2190,candidatesTokenCount:1850,totalTokenCount:4040}});
+ });
+ const row=result.results[0];assert.equal(calls,2);assert.equal(row.error,'AI_PROVIDER_ERROR');assert.equal(row.budgetLimit,null);assert.equal(row.metrics[1].status,503);assert.equal(row.trace[0].draftChecks.tests.failures[0].path,'$.tests[0].expect[0]');assert.equal(row.trace[0].draftChecks.tests.failures[0].code,'ASSERTION_FAILED');assert.equal(row.dataPreserved,true);assert.equal(row.exported,false);
+ assert.doesNotMatch(JSON.stringify(result),/private-fixture-credential|private-expected-marker|private-continuation|Private synthetic response label/);
 });

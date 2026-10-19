@@ -269,7 +269,18 @@ export function createKernel() {
   }
   function runTests(program) {
     const p=validateProgram(program),results=[];
-    for(const t of p.tests){try{const s=snapshotFor(p);Object.assign(s.state,copy(t.state));Object.assign(s.data,copy(t.data));const m=createMachine(p,s,{today:'2026-10-16'});for(const a of t.actions)m.dispatch(a.id,a.event);for(const e of t.expect)need(equal(m.evaluate(e.value),e.equals),'Expected value did not match.');results.push({name:t.name,passed:true});}catch{results.push({name:t.name,passed:false,error:'Execution or assertion failed.'});}}
+    for(const [index,t] of p.tests.entries()){
+      let phase='setup',path=`$.tests[${index}]`;
+      try{
+        const s=snapshotFor(p);Object.assign(s.state,copy(t.state));Object.assign(s.data,copy(t.data));const m=createMachine(p,s,{today:'2026-10-16'});
+        for(const [i,a] of t.actions.entries()){phase='action';path=`$.tests[${index}].actions[${i}]`;m.dispatch(a.id,a.event);}
+        for(const [i,e] of t.expect.entries()){
+          phase='assertion';path=`$.tests[${index}].expect[${i}]`;
+          if(!equal(m.evaluate(e.value),e.equals)){const error=new Error('Expected value did not match.');error.code='ASSERTION_FAILED';throw error;}
+        }
+        results.push({name:t.name,passed:true});
+      }catch(e){results.push({name:t.name,passed:false,error:String(e?.message??'Execution failed.').slice(0,300),code:e?.code==='ASSERTION_FAILED'?'ASSERTION_FAILED':'EXECUTION_FAILED',phase,path});}
+    }
     return {passed:results.every(r=>r.passed),total:results.length,results};
   }
   /** Stable-ID edits; root replacement is intentionally not available for existing programs. */

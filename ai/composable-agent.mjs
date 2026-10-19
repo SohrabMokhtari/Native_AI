@@ -94,7 +94,7 @@ export async function buildComposable({prompt,current=null,revision=0,conversati
       }catch(e){
         repairs++;const details=['INVALID_PROGRAM_SCHEMA','INVALID_TOOL_ARGUMENTS'].includes(e.code)?structuredClone(e.details):undefined;
         result={error:{code:'INVALID_CONSTRUCTION',message:(e instanceof SyntaxError?'Tool payload is not JSON.':e.message).slice(0,500),operation:known?call.name:'unknown',...(details?{details}:{})},revision:session.revision(),draftState:session.status(),diagnostics:session.diagnostics(),guidance:session.status().hasDraft?'Repair with ID-based edits at this revision, then submit_app. Use supplied field diagnostics; no extra inspection is needed for a missing property.':'No validated draft exists. Resubmit the complete corrected {program:...} using submit_app at this revision. Do not send {edits:...} or inspect_app to repair an empty draft.'};
-        trace.push({tool:known?call.name:'unknown',ok:false,error:result.error,revision:session.revision()});
+        trace.push({tool:known?call.name:'unknown',ok:false,error:result.error,revision:session.revision(),draftState:result.draftState,...(result.diagnostics.checks?.passed===false?{draftChecks:structuredClone(result.diagnostics.checks)}:{})});
       }
       if(result.finished){const {finished,...final}=result;return {...final,usage:usage(),trace};}
       // Exact inspection is explicitly requested. Automatic feedback never echoes an unchanged app.

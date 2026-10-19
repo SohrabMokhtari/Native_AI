@@ -36,6 +36,19 @@ export default {async fetch(){
         return Response.json(response('submit_app',{payload:JSON.stringify({program:schemaCalls===1?invalid:quizExample()}),message:'Synthetic schema repair.',revision:0}));
       });
       check(repaired.status==='ready'&&repaired.usage.repairs===1&&schemaCalls===2,'schema repaired');checks.push(provider+': exact schema path, draft state, call budget and complete resubmission');
+      let failedCalls=0;const failing=quizExample();failing.tests[0].expect[0].equals=999;
+      try{
+        await buildComposable({prompt:'Failed check followed by unavailable provider'},env,async()=>{
+          failedCalls++;return failedCalls===1?Response.json(response('submit_app',{payload:JSON.stringify({program:failing}),message:'Synthetic failing check.',revision:0})):new Response(null,{status:503});
+        });
+        throw new Error('accepted failed check');
+      }catch(e){
+        check(e instanceof BuildError&&e.code==='AI_PROVIDER_ERROR'&&failedCalls===2,'503 without retry');
+        check(e.trace[0].revision===1&&e.trace[0].draftState.hasDraft===true,'private draft retained');
+        check(e.trace[0].draftChecks.tests.failures[0].path==='$.tests[0].expect[0]'&&e.trace[0].draftChecks.tests.failures[0].code==='ASSERTION_FAILED','failed check evidence');
+        check(!JSON.stringify(e.trace).includes('runtime-fixture'),'private metadata absent');
+      }
+      checks.push(provider+': failed behavior evidence survives provider 503 without retry');
       for(const status of [302,400,401,403,404,429,500]){let n=0;try{await buildComposable({prompt:'Failure fixture'},env,async()=>{n++;return new Response(null,{status});});throw new Error('accepted failure');}catch(e){check(e instanceof BuildError&&n===1,'no retry');check(!e.message.includes('runtime-fixture'),'sanitized');}checks.push(provider+': HTTP '+status);}
     }
     return Response.json({passed:true,runtime:'actual workerd; synthetic inference only',checks});

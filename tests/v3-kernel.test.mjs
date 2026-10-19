@@ -82,3 +82,16 @@ test('v3 schema diagnostic output bounds unknown names and redacts credential-sh
 for(const [path,change]of [['$.design',p=>p.design=null],['$.pages[0].root',p=>p.pages[0].root=null],['$.pages[0].root.style',p=>p.pages[0].root.style=null]])test('v3 malformed object retains its parent path '+path,()=>{
  const p=dashboardExample();change(p);assert.throws(()=>validateProgram(p),e=>e.code==='INVALID_PROGRAM_SCHEMA'&&e.details.path===path);
 });
+for(const [name,change,phase,path,code,message]of [
+ ['assertion mismatch',p=>p.tests[0].expect[0].equals='private-expected-value','assertion','$.tests[0].expect[0]','ASSERTION_FAILED',/Expected value did not match/],
+ ['expression execution',p=>p.tests[0].expect[0].value=['div',1,0],'assertion','$.tests[0].expect[0]','EXECUTION_FAILED',/Division by zero/],
+ ['fixture setup',p=>p.tests[0].state.score='private-fixture-value','setup','$.tests[0]','EXECUTION_FAILED',/declared type/],
+ ['action execution',p=>{p.actions.push({id:'bad-test-action',steps:[{op:'set',state:'score',value:['div',1,0]}]});p.tests[0].actions=[{id:'bad-test-action',event:{}}];},'action','$.tests[0].actions[0]','EXECUTION_FAILED',/Division by zero/]
+])test('v3 supplied test failure identifies '+name+' without revealing fixture values',()=>{
+ const p=quizExample();change(p);const before=clone(p),r=runTests(p).results[0];assert.equal(r.passed,false);assert.equal(r.phase,phase);assert.equal(r.path,path);assert.equal(r.code,code);assert.match(r.error,message);assert.doesNotMatch(JSON.stringify(r),/private-expected-value|private-fixture-value/);assert.deepEqual(p,before);
+});
+test('v3 preflight names the innermost failing node without evaluating hidden subtrees',()=>{
+ const p=quizExample();p.pages[0].root.children.push({id:'broken-stat',type:'stat',label:'Broken fixture',value:['div',1,0]});
+ const r=preflight(p);assert.equal(r.passed,false);assert.equal(r.issues[0].node,'broken-stat');assert.equal(r.issues[0].page,'play');assert.match(r.issues[0].error,/Division by zero/);
+ p.pages[0].root.children.at(-1).visible=false;assert.equal(preflight(p).passed,true);
+});

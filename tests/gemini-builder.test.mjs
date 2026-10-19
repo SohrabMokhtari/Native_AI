@@ -206,3 +206,17 @@ test('submit/inspect/edit failures report a call limit and actionable property p
  const m=mock([submit('gemini',invalid),call('gemini','inspect_app',{}),call('gemini','edit_app',{payload:JSON.stringify({program:partial})})]);
  await assert.rejects(buildComposable({prompt:'Build'},env(),m.fetcher),e=>{assert.equal(e.code,'AI_BUDGET_EXCEEDED');assert.equal(e.limit,'calls');assert.equal(e.usage.calls,3);assert.ok(e.usage.remainingCompletionBudget>0);assert.equal(e.trace[0].error.details.path,'$.collections[0].fields[0]');assert.deepEqual(e.trace[2].error.details.missingFields,['collections']);return true;});
 });
+for(const provider of ['groq','gemini'])test(provider+': failed behavior diagnostics survive a subsequent provider 503 without retry',async()=>{
+ const p=dashboardExample();p.tests[0].expect[0].equals='private-expected-marker';const before=structuredClone(p),m=mock([submit(provider,p),new Response(null,{status:503})]);
+ await assert.rejects(buildComposable({prompt:'Build'},env(provider),m.fetcher),e=>{
+   assert.equal(e.code,'AI_PROVIDER_ERROR');assert.equal(e.usage.calls,2);assert.equal(e.trace.length,1);
+   const failed=e.trace[0];assert.equal(failed.draftState.hasDraft,true);assert.equal(failed.draftState.revision,1);assert.equal(failed.draftChecks.passed,false);
+   const check=failed.draftChecks.tests.failures[0];assert.equal(check.code,'ASSERTION_FAILED');assert.equal(check.phase,'assertion');assert.equal(check.path,'$.tests[0].expect[0]');assert.match(check.error,/Expected value did not match/);
+   assert.doesNotMatch(JSON.stringify(e.trace),/private-expected-marker|opaque-test|fixture-google|fixture-groq/);return true;
+ });assert.equal(m.requests.length,2);assert.deepEqual(p,before);
+});
+test('render preflight diagnostics survive a failed repair connection with no private program data',async()=>{
+ const p=dashboardExample();p.pages[0].root.children.push({id:'broken-total',type:'stat',label:'Private design label not for trace',value:['div',1,0]});
+ const m=mock([submit('gemini',p),new Error('private transport details')]);
+ await assert.rejects(buildComposable({prompt:'Build'},env(),m.fetcher),e=>{assert.equal(e.code,'AI_UNAVAILABLE');assert.equal(e.trace[0].draftChecks.issues[0].node,'broken-total');assert.match(e.trace[0].draftChecks.issues[0].error,/Division by zero/);assert.doesNotMatch(JSON.stringify(e.trace),/private transport details|Private design label|opaque-test/);return true;});
+});

@@ -47,4 +47,4 @@ export function inspectStructure(p,targets){
   if(bytes(result)>24000)throw new Error('Inspection exceeds 24000 bytes. Request narrower node/function/action IDs; nothing was truncated.');
   return result;
 }
-export function compactChecks(report){return {passed:report.passed,tests:{total:report.tests.total,passed:report.tests.passed,failures:report.tests.results.filter(t=>!t.passed).map(t=>({name:t.name,error:t.error})).slice(0,6)},issues:report.issues.slice(0,6),warnings:report.warnings};}
+export function compactChecks(report){return {passed:report.passed,tests:{total:report.tests.total,passed:report.tests.passed,failures:report.tests.results.filter(t=>!t.passed).map(t=>({name:t.name,error:t.error,code:t.code,phase:t.phase,path:t.path})).slice(0,6)},issues:report.issues.slice(0,6),warnings:report.warnings};}

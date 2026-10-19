@@ -1,0 +1,36 @@
+{
+  "source": "Owner-pasted live CLI output on October 19, 2026; no raw model output or original program available.",
+  "reported": {
+    "configuration": "optimized-gemini",
+    "model": "gemini-3.8-flash",
+    "success": false,
+    "error": "AI_PROVIDER_ERROR",
+    "calls": 2,
+    "repairs": 1,
+    "elapsedMs": 37927,
+    "statuses": [
+      200,
+      503
+    ],
+    "privateDraftRevision": 1,
+    "localError": "Draft checks failed. Repair before finishing.",
+    "originalFailedCheck": "UNKNOWN: previous trace omitted check summary.",
+    "dataPreserved": true,
+    "inputUnchanged": true,
+    "exported": false
+  },
+  "regressions": {
+    "inference": "SYNTHETIC ONLY",
+    "nodeTests": 9,
+    "workerdProviderChecks": 2,
+    "coverage": [
+      "Assertion failure with phase and index path retained after repair HTTP 503 for Groq and Gemini",
+      "Render preflight node retained after failed repair connection",
+      "Evaluation report preserves bounded failed-check summary",
+      "No assertion values, raw programs, credentials, provider prose or private continuation in trace",
+      "No automatic retries or raised limits"
+    ]
+  },
+  "liveRerunAfterCorrection": "NOT RUN",
+  "successfulLiveBuild": "UNVERIFIED"
+}
