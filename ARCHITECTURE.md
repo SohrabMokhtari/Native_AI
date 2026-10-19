@@ -1,5 +1,11 @@
 # Architecture
 
+## v3 provider-independent construction (October 19, 2026)
+
+`composable-gateway → composable-agent/session → construction-adapters → fixed provider endpoint` is the experimental v3 path. Transport owns authentication, protocol, opaque continuation and normalized usage. The session owns the canonical full executable program, ID-based edits, validation, compatibility and deterministic checks. Incremental model context is a non-authoritative index with exact bounded dependency inspection; it does not replace the validated canonical program. Combined submission can finalize a complete checked draft in one turn. Browser approval and populated-data checks remain required. No per-app source-generation stage is introduced.
+
+The original v1 route described below is unchanged. v3 has its own provider/model overrides, Groq and opt-in Gemini transports, existing 3-call/8,192-completion/55-second limits and private per-build session state. See [GEMINI_BUILDER.md](GEMINI_BUILDER.md) for the full boundary, usage conventions, configuration and privacy details.
+
 ## Product contract
 
 A person describes desired behavior, receives a working supported app, and changes it through conversation. They do not write code, choose a framework, install dependencies, or provide a model API key. Source readability must not constrain the internal representation when another representation measurably works better.

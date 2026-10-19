@@ -1,0 +1,5 @@
+{
+  "name": "native-ai-local-integration-only",
+  "main": "./workerd-entry.mjs",
+  "compatibility_date": "2026-10-15"
+}

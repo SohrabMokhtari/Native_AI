@@ -1,0 +1,16 @@
+{
+  "method": "Synthetic identical Groq tool results; no inference or quality comparison",
+  "baselineCommit": "16ee5cac4df3dab8b57fa5aac59f9988ad0b6ad3",
+  "identicalApp": true,
+  "baseline": {
+    "calls": 2,
+    "inputBytes": 27735
+  },
+  "optimized": {
+    "calls": 1,
+    "inputBytes": 11017
+  },
+  "initialDesignBytes": 4938,
+  "indexBytes": 1821,
+  "note": "Reported token counts are injected test values. No live quota/cost/quality claim."
+}

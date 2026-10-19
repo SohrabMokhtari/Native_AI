@@ -1,0 +1,58 @@
+{
+  "mode": "dry",
+  "liveResults": "NOT RUN",
+  "configurations": [
+    "baseline-groq",
+    "optimized-groq",
+    "optimized-gemini"
+  ],
+  "cases": [
+    {
+      "id": "create",
+      "heldOut": false,
+      "prompt": "Build a small local task board. Use tasks collection with title text, status select Todo/Done, done boolean and due date. Render an editable board grouped by status. Include meaningful behavior tests."
+    },
+    {
+      "id": "redesign",
+      "heldOut": false,
+      "prompt": "Change this workspace to dark mode and compact density. Preserve existing collections, fields, IDs, records and behavior."
+    },
+    {
+      "id": "completion",
+      "heldOut": false,
+      "prompt": "Add a Completion percentage stat using a function with ID completion returning a number 0..100 based on tasks.done. Empty data must return 0. Display its result. Keep existing task functionality."
+    },
+    {
+      "id": "overdue",
+      "heldOut": false,
+      "prompt": "Highlight overdue tasks on the existing task-board node. A task is overdue only when done is false and its nonempty due date is before today. Keep the task board."
+    },
+    {
+      "id": "focus",
+      "heldOut": false,
+      "prompt": "Add a page with ID focus titled Focus, showing tasks with completed tasks filtered out using tasks.done. Preserve the existing task board."
+    },
+    {
+      "id": "quiz",
+      "heldOut": false,
+      "prompt": "Build a two-question quiz with scoring, progression, result and restart. Questions: 2+2 (4 correct, 5 wrong); sky color (blue correct, green wrong). Use state index (0 based), score, choice; actions choose (event.value), answer, next, restart. Answering twice must not score twice. Include meaningful tests and visible controls."
+    },
+    {
+      "id": "unsupported",
+      "heldOut": false,
+      "prompt": "Create real shared accounts with secure authentication and a cloud database synchronized across devices. These are essential requirements."
+    },
+    {
+      "id": "heldout-shipping",
+      "heldOut": true,
+      "prompt": "Build a local parcel quote calculator. Numeric state weight starts at 0; input action set-weight uses event.value. Function quote returns 0 when weight <=0, otherwise 5 plus 2 times weight. Display quote as a stat. Include input and behavior tests. No payments or network."
+    }
+  ],
+  "limits": {
+    "callsPerBuild": 3,
+    "completionTokensPerBuild": 8192,
+    "inputBytesPerBuild": 220000,
+    "deadlineMs": 55000
+  },
+  "note": "No inference, no canned results. Live mode requires explicit call/output-token reservation budgets and private keys."
+}

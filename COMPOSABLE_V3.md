@@ -1,5 +1,9 @@
 # Native AI / Composable Lab
 
+## Experimental provider update (October 19, 2026)
+
+The v3 construction loop now supports independent Groq/Gemini adapters. Groq remains the configured default; legacy routes and workspaces are unchanged. Incremental structure inspection and `submit_app` reduce avoidable context/acknowledgement turns while preserving local validation and browser Apply/Discard. The historical description below documents the original lab; current provider precedence, limits, continuation handling, owner rollout and dry/live evaluation commands are authoritative in [GEMINI_BUILDER.md](GEMINI_BUILDER.md). See [VERIFICATION-gemini.md](VERIFICATION-gemini.md) for measured synthetic overhead and explicitly unrun live comparisons.
+
 ## What changed
 
 The new `native-ai/3` artifact is an executable program, not a request to generate per-app source files. It combines a component tree, typed persistent state, pure expression functions, local collections and event-driven action sequences. The shared kernel interprets the program; the same renderer is used in the lab and exported apps.

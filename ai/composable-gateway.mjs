@@ -6,10 +6,14 @@ const has=v=>typeof v==='string'&&v.trim().length>0;
 function configured(env){return env.COMPOSABLE_AI_ENABLED==='true'&&env.PUBLIC_AI_ENABLED==='true'&&composableConfig(env)&&has(env.TURNSTILE_SECRET)&&has(env.TURNSTILE_SITE_KEY)&&typeof env.GENERATION_LIMITER?.limit==='function'&&typeof env.GLOBAL_LIMITER?.limit==='function';}
 export async function handleComposable(request,env,fetcher=fetch){
   const url=new URL(request.url);
-  if(url.pathname==='/api/v3/config'&&request.method==='GET')return reply(configured(env)?{mode:'live',siteKey:env.TURNSTILE_SITE_KEY,provider:'groq',...composableConfig(env)}:{mode:'disabled',reason:'Composable AI requires explicit operator enablement. Local examples remain available.'});
+  if(url.pathname==='/api/v3/config'&&request.method==='GET'){
+    if(!configured(env))return reply({mode:'disabled',code:'AI_NOT_CONFIGURED',reason:'Selected v3 provider requires explicit enablement, its own secret, and abuse controls. No fallback.'});
+    const c=composableConfig(env);
+    return reply({mode:'live',siteKey:env.TURNSTILE_SITE_KEY,provider:c.provider,model:c.model,maxCalls:c.maxCalls,maxCompletionTokens:c.maxCompletionTokens,deadlineMs:c.deadlineMs});
+  }
   if(url.pathname!=='/api/v3/generate')return reply({error:'Not found.'},404);
   if(request.method!=='POST')return reply({error:'Method not allowed.'},405);
-  if(!configured(env))return reply({error:'Composable AI is disabled. The existing builder is unchanged.'},503);
+  if(!configured(env))return reply({error:'Selected v3 provider is disabled or not configured. No fallback.',code:'AI_NOT_CONFIGURED'},503);
   if(request.headers.get('Origin')!==url.origin)return reply({error:'Origin not allowed.'},403);
   if(!request.headers.get('Content-Type')?.toLowerCase().startsWith('application/json'))return reply({error:'JSON required.'},415);
   let body;
@@ -24,6 +28,6 @@ export async function handleComposable(request,env,fetcher=fetch){
     const r=await fetcher('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',redirect:'manual',body:new URLSearchParams({secret:env.TURNSTILE_SECRET,response:body.token,remoteip:ip}),signal:AbortSignal.timeout(10000)});
     if(!r.ok){await r.body?.cancel().catch(()=>{});return reply({error:'Anti-abuse verification unavailable.'},503);}
     const proof=await boundedJSON(r,16000);if(proof.success!==true||proof.hostname!==url.hostname||proof.action!=='generate')return reply({error:'Anti-abuse verification failed.'},403);
-    const {token,...input}=body;return reply(await buildComposable(input,env,fetcher));
+    const {token,...input}=body;return reply(await buildComposable(input,env,fetcher,{signal:request.signal}));
   }catch(e){if(e instanceof BuildError)return reply({error:e.message,code:e.code},e.status,e.retryAfter?{'Retry-After':String(e.retryAfter)}:{});return reply({error:'Construction service failed. No changes applied.',code:'BUILD_UNAVAILABLE'},503);}
 }

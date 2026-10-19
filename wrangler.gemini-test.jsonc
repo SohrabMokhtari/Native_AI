@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "native-ai-gemini-test",
+  "main": "worker-v3.mjs",
+  "compatibility_date": "2026-10-15",
+  "keep_vars": true,
+  "assets": {
+    "directory": "./docs",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "vars": {
+    "AI_PROVIDER": "groq",
+    "AI_MODEL": "openai/gpt-oss-120b",
+    "V3_AI_PROVIDER": "gemini",
+    "V3_AI_MODEL": "gemini-3.8-flash",
+    "V3_MAX_CALLS": "3"
+  },
+  "ratelimits": [
+    {
+      "name": "GENERATION_LIMITER",
+      "namespace_id": "10711",
+      "simple": {"limit": 1, "period": 60}
+    },
+    {
+      "name": "GLOBAL_LIMITER",
+      "namespace_id": "10712",
+      "simple": {"limit": 2, "period": 60}
+    }
+  ]
+}

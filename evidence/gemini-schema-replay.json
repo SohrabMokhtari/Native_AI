@@ -1,0 +1,34 @@
+{
+  "source": "Owner-reported CLI output in conversation; original model payloads unavailable",
+  "calls": 3,
+  "statuses": [
+    200,
+    200,
+    200
+  ],
+  "completionBudget": 8192,
+  "remainingCompletionBudget": 4182,
+  "elapsedMs": 37623,
+  "repairs": 2,
+  "trace": [
+    {
+      "tool": "submit_app",
+      "ok": false,
+      "message": "Unknown or missing property.",
+      "revision": 0
+    },
+    {
+      "tool": "inspect_app",
+      "ok": true
+    },
+    {
+      "tool": "edit_app",
+      "ok": false,
+      "message": "Unknown or missing property.",
+      "revision": 0
+    }
+  ],
+  "diagnosis": "Three-call limit after two strict property-schema rejections. The exact rejected fields are unknown; accounting left completion capacity.",
+  "correction": "Exact schema object paths and keys, explicit draft state and full-program repair guidance, remaining-call feedback, and budgetLimit in maintainer results. Acceptance rules and limits unchanged.",
+  "verification": "22 offline schema/repair regressions; actual local workerd synthetic repairs for both transports; actual Chromium studio and standalone export checks. No live correction run by agent."
+}

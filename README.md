@@ -1,5 +1,7 @@
 # Native AI
 
+Experimental v3 update: optional Gemini transport, a provider-independent construction loop, bounded structure inspection and combined submission. Groq remains the configured default. See [Gemini builder setup and evaluation](GEMINI_BUILDER.md) and [current verification](VERIFICATION-gemini.md). One owner-run live Gemini creation evaluation and a manual theme-edit/Apply/reload/export smoke test on a separate deployed test Worker passed. A matched provider comparison has not run.
+
 **An idea in. An app out.** Describe an application in ordinary language, try it in the browser, refine it, and take the working app with you.
 
 The goal is **zero coding and zero developer-tool installation for the person building an app**. Human-readable source code is optional as an intermediate representation, not forbidden. The shared engine is currently JavaScript; each supported app is a validated executable structure rather than a separately generated codebase.

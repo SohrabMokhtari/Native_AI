@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-19",
+  "baselineCommit": "16ee5cac4df3dab8b57fa5aac59f9988ad0b6ad3",
+  "baselineTests": {
+    "pass": 286,
+    "fail": 0
+  },
+  "currentTests": {
+    "pass": 430,
+    "fail": 0
+  },
+  "syntaxModules": 38,
+  "tapSHA256": "41b42a9e0bbd10908b087ddbac662c5d80b4a366773d49b8224a104e5340f478",
+  "liveProvider": "Owner-reported direct Gemini create PASS: two calls, one repair, two supplied tests plus independent acceptance/export, 47571 ms. Later owner-operated deployed planner theme edit PASS: screenshot reports one call/three supplied tests; owner confirmed Apply/reload, post-edit task storage and standalone open/use. No matched provider comparison or live stalled-provider/CLI-progress verification; no agent inference calls or private credential reads.",
+  "deployedEndToEnd": "PASS: owner-operated manual theme-edit smoke on separate test Worker. Agent independently checked public config/studio HTTP only; see gemini-deployed-smoke.json.",
+  "followupBaselineTests": {
+    "pass": 375,
+    "fail": 0
+  },
+  "schemaRepairBaselineTests": {
+    "pass": 387,
+    "fail": 0
+  },
+  "failedCheckBaselineTests": {
+    "pass": 409,
+    "fail": 0
+  },
+  "timeoutProgressBaselineTests": {
+    "pass": 418,
+    "fail": 0
+  },
+  "separateTestWorker": {
+    "configuration": "wrangler.gemini-test.jsonc",
+    "dryRun": "PASS",
+    "freshConfigMode": "disabled",
+    "deployed": "PASS: owner-operated setup and connected feature-branch build; public config/studio HTTP checked by agent."
+  }
+}
