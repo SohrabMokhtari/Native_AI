@@ -1,5 +1,7 @@
 # Security and privacy
 
+Experimental v3 Gemini details: [GEMINI_BUILDER.md](GEMINI_BUILDER.md). Provider secrets remain server-only. Google unpaid-service requests may be used for product improvement and human review, subject to regional/account exceptions. Provider keys/model names do not establish free usage or the applicable data tier. No records/runtime snapshots are sent; prompts, design constants and requested structure are provider-visible. Opaque continuation remains private and byte bounded within one build. Multiple tool calls are rejected before mutations; network/code tools are never exposed. Production abuse controls are unchanged.
+
 This is a local-first public prototype, not a security-reviewed production platform.
 
 ## Supported boundary

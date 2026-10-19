@@ -1,0 +1,35 @@
+{
+  "method": "Actual local Chromium navigation and localStorage. Inference and Turnstile mocked. No live model or deployed Worker.",
+  "checks": [
+    {
+      "provider": "groq",
+      "passed": true,
+      "checks": [
+        "provider disclosure",
+        "real origin storage/reload",
+        "draft staging",
+        "discard preserves data",
+        "apply preserves data",
+        "compatible undo",
+        "standalone export excludes records",
+        "no private records in request",
+        "no page errors"
+      ]
+    },
+    {
+      "provider": "gemini",
+      "passed": true,
+      "checks": [
+        "provider disclosure",
+        "real origin storage/reload",
+        "draft staging",
+        "discard preserves data",
+        "apply preserves data",
+        "compatible undo",
+        "standalone export excludes records",
+        "no private records in request",
+        "no page errors"
+      ]
+    }
+  ]
+}

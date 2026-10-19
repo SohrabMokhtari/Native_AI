@@ -1,5 +1,7 @@
 # Deployment: no installs for visitors
 
+For the opt-in **v3-only Gemini experiment**, see [browser-oriented activation and rollback](GEMINI_BUILDER.md#browser-oriented-owner-rollout). Keep legacy `AI_PROVIDER=groq` / `AI_MODEL` and all production controls intact. This feature branch does not change `wrangler.jsonc`, secrets, billing or a deployment. Review [current verification](VERIFICATION-gemini.md) before owner-controlled rollout.
+
 The owner configures hosting once. Visitors need only a supported browser, not model downloads, developer tools, or API keys. This update implements Groq support; it does **not** activate hosting or prove a live provider call.
 
 ## A. Starter studio on GitHub Pages

@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "runtime": "actual workerd; synthetic inference only",
+  "checks": [
+    "groq: construction, continuation, signal, structuredClone and bounds",
+    "groq: v3 routing and legacy isolation",
+    "groq: full Turnstile/generation route with request signal",
+    "groq: HTTP 302",
+    "groq: HTTP 400",
+    "groq: HTTP 401",
+    "groq: HTTP 403",
+    "groq: HTTP 404",
+    "groq: HTTP 429",
+    "groq: HTTP 500",
+    "gemini: construction, continuation, signal, structuredClone and bounds",
+    "gemini: v3 routing and legacy isolation",
+    "gemini: full Turnstile/generation route with request signal",
+    "gemini: HTTP 302",
+    "gemini: HTTP 400",
+    "gemini: HTTP 401",
+    "gemini: HTTP 403",
+    "gemini: HTTP 404",
+    "gemini: HTTP 429",
+    "gemini: HTTP 500"
+  ]
+}

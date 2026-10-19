@@ -4,6 +4,8 @@
 .dev.vars.*
 node_modules/
 .wrangler/
+.test-tools/
+evidence/gemini-tests.tap
 .DS_Store
 __pycache__/
 *.native.json

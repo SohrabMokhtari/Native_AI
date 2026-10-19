@@ -6,3 +6,7 @@ PUBLIC_AI_ENABLED=false
 GROQ_API_KEY=
 TURNSTILE_SECRET=
 TURNSTILE_SITE_KEY=
+# Experimental v3 override only; keep legacy AI_PROVIDER/AI_MODEL above.
+# V3_AI_PROVIDER=gemini
+# V3_AI_MODEL=gemini-3.8-flash
+# GEMINI_API_KEY=
