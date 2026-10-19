@@ -15,6 +15,7 @@
     "gemini: construction, continuation, signal, structuredClone and bounds",
     "gemini: v3 routing and legacy isolation",
     "gemini: full Turnstile/generation route with request signal",
+    "gemini: missing thinking breakdown permits bounded third-call repair and local diagnostics",
     "gemini: HTTP 302",
     "gemini: HTTP 400",
     "gemini: HTTP 401",

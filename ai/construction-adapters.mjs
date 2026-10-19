@@ -17,6 +17,21 @@ export function normalizeUsage(provider,data){
   return provider==='gemini'?{inputTokens:count(u?.promptTokenCount),outputTokens:count(u?.candidatesTokenCount),thinkingTokens:count(u?.thoughtsTokenCount),cachedTokens:count(u?.cachedContentTokenCount),totalTokens:count(u?.totalTokenCount),outputIncludesThinking:false}
     :{inputTokens:count(u?.prompt_tokens),outputTokens:count(u?.completion_tokens),thinkingTokens:count(u?.completion_tokens_details?.reasoning_tokens),cachedTokens:count(u?.prompt_tokens_details?.cached_tokens),totalTokens:count(u?.total_tokens),outputIncludesThinking:true};
 }
+/** A conservative completion bound; preserve unknown components as null in reported usage.
+ * Gemini total includes prompt + tool-use prompt + thoughts + candidates. Removing only
+ * prompt tokens therefore still bounds completion when the thinking breakdown is absent.
+ */
+export function completionUsageBound(usage){
+  const input=count(usage.inputTokens),total=count(usage.totalTokens),output=count(usage.outputTokens),thinking=count(usage.thinkingTokens);
+  const known=usage.outputIncludesThinking?output:(output!==null&&thinking!==null&&Number.isSafeInteger(output+thinking)?output+thinking:null);
+  const difference=input!==null&&total!==null&&total>=input?total-input:null;
+  // Inconsistent totals cannot justify a refund of reserved output capacity.
+  if(usage.outputIncludesThinking&&output!==null&&thinking!==null&&thinking>output)return {tokens:null,basis:'unknown-or-inconsistent'};
+  if(input!==null&&total!==null&&(difference===null||difference<(known??Math.max(output??0,thinking??0))))return {tokens:null,basis:'unknown-or-inconsistent'};
+  if(known!==null)return {tokens:known,basis:usage.outputIncludesThinking?'reported-completion':'reported-output-plus-thinking'};
+  if(difference!==null)return {tokens:difference,basis:'reported-total-minus-input-upper-bound'};
+  return {tokens:null,basis:'unknown-or-inconsistent'};
+}
 /** One adapter instance per build. Opaque Gemini content never leaves this closure. */
 export function createAdapter(config,{instructions,input,tools}){
   const gemini=config.provider==='gemini';

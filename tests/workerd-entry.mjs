@@ -21,6 +21,14 @@ export default {async fetch(){
       const incoming=new Request('https://runtime.example/api/v3/generate',{method:'POST',headers:{Origin:'https://runtime.example','Content-Type':'application/json','CF-Connecting-IP':'192.0.2.1'},body:JSON.stringify({prompt:'Full gateway fixture',current:null,revision:0,token:'proof'})});
       const generated=await handleRequest(incoming,env,async(url,init)=>{check(init.signal instanceof AbortSignal,'gateway signal');return Response.json(url.includes('siteverify')?{success:true,hostname:'runtime.example',action:'generate'}:response('submit_app',{payload:JSON.stringify({program:quizExample()}),message:'Complete.',revision:0}));});
       check(generated.status===200&&(await generated.json()).status==='ready','full gateway');checks.push(provider+': full Turnstile/generation route with request signal');
+      if(provider==='gemini'){
+        let repairs=0;
+        const fixed=await buildComposable({prompt:'Missing thinking breakdown fixture'},env,async()=>{
+          repairs++;const r=repairs===1?response('submit_app',{payload:'{',message:'Invalid fixture.',revision:0}):repairs===2?response('inspect_app',{}):response('submit_app',{payload:JSON.stringify({program:quizExample()}),message:'Repaired fixture.',revision:0});
+          r.usageMetadata={promptTokenCount:2058,candidatesTokenCount:2312,totalTokenCount:4370};return Response.json(r);
+        });
+        check(fixed.status==='ready'&&fixed.usage.calls===3&&fixed.usage.repairs===1,'three-call repair');check(fixed.usage.turns[0].reported.thinkingTokens===null&&fixed.usage.turns[0].chargedCompletionTokens===2312,'conservative charge');check(fixed.trace[0].error.message==='Tool payload is not JSON.','sanitized repair trace');checks.push('gemini: missing thinking breakdown permits bounded third-call repair and local diagnostics');
+      }
       for(const status of [302,400,401,403,404,429,500]){let n=0;try{await buildComposable({prompt:'Failure fixture'},env,async()=>{n++;return new Response(null,{status});});throw new Error('accepted failure');}catch(e){check(e instanceof BuildError&&n===1,'no retry');check(!e.message.includes('runtime-fixture'),'sanitized');}checks.push(provider+': HTTP '+status);}
     }
     return Response.json({passed:true,runtime:'actual workerd; synthetic inference only',checks});

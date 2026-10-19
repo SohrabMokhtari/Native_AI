@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {buildComposable,composableConfig,createConstructionSession,BuildError} from '../ai/composable-agent.mjs';
-import {createAdapter,adapterConfig,normalizeUsage} from '../ai/construction-adapters.mjs';
+import {createAdapter,adapterConfig,normalizeUsage,completionUsageBound} from '../ai/construction-adapters.mjs';
 import {contextIndex,inspectStructure} from '../ai/construction-context.mjs';
 import {EFFICIENT_TOOLS} from '../ai/composable-spec.mjs';
 import {handleComposable} from '../ai/composable-gateway.mjs';
@@ -105,6 +105,46 @@ test('Gemini gateway verifies challenge, respects request cancellation signal an
 });
 test('Gemini usage adds thinking once; Groq reasoning is a subset, cached tokens subset of input',()=>{
   const g=normalizeUsage('gemini',call('gemini','inspect_app',{})),q=normalizeUsage('groq',call('groq','inspect_app',{}));assert.equal(g.outputTokens+g.thinkingTokens,25);assert.equal(q.outputTokens,25);assert.equal(q.outputIncludesThinking,true);assert.equal(g.inputTokens,100);assert.equal(g.cachedTokens,10);
+});
+test('owner-reported Gemini usage provides a completion bound without inventing thinking counts',()=>{
+  for(const [input,output,total] of [[2058,2312,4370],[4454,10,4464]]){
+    const u=normalizeUsage('gemini',{usageMetadata:{promptTokenCount:input,candidatesTokenCount:output,totalTokenCount:total}});
+    assert.equal(u.thinkingTokens,null);assert.equal(u.cachedTokens,null);
+    assert.deepEqual(completionUsageBound(u),{tokens:output,basis:'reported-total-minus-input-upper-bound'});
+  }
+});
+test('a missing thinking breakdown preserves room for the third repair call',async()=>{
+  const invalid=dashboardExample();invalid.design.accent='invalid';
+  const first=submit('gemini',invalid);first.usageMetadata={promptTokenCount:2058,candidatesTokenCount:2312,totalTokenCount:4370};
+  const second=call('gemini','inspect_app',{});second.usageMetadata={promptTokenCount:4454,candidatesTokenCount:10,totalTokenCount:4464};
+  const third=submit('gemini');third.usageMetadata={promptTokenCount:5000,candidatesTokenCount:2312,totalTokenCount:7312};
+  const m=mock([first,second,third]),r=await buildComposable({prompt:'Build'},env(),m.fetcher);
+  assert.equal(r.status,'ready');assert.equal(r.usage.calls,3);assert.equal(r.usage.repairs,1);assert.equal(r.usage.completionBudget,8192);
+  assert.equal(r.usage.turns[0].chargedCompletionTokens,2312);assert.ok(r.usage.remainingCompletionBudget>0);
+  assert.ok(r.usage.turns.every(t=>t.reported.thinkingTokens===null&&t.completionChargeBasis==='reported-total-minus-input-upper-bound'));
+  assert.match(r.trace[0].error.message,/Invalid color/);assert.doesNotMatch(JSON.stringify(r.trace),/fixture-google|opaque-test|payload|thoughtSignature/);
+});
+test('total-minus-input keeps unreported thinking and tool-use tokens in the charged bound',()=>{
+  const u=normalizeUsage('gemini',{usageMetadata:{promptTokenCount:100,candidatesTokenCount:20,cachedContentTokenCount:80,toolUsePromptTokenCount:7,totalTokenCount:157}});
+  assert.equal(completionUsageBound(u).tokens,57);assert.equal(u.thinkingTokens,null);assert.equal(u.inputTokens,100);
+});
+test('Groq reasoning remains a subset and contradictory usage cannot reduce reservations',()=>{
+  const valid=normalizeUsage('groq',{usage:{prompt_tokens:100,completion_tokens:25,total_tokens:125,completion_tokens_details:{reasoning_tokens:5}}});assert.equal(completionUsageBound(valid).tokens,25);
+  valid.thinkingTokens=30;assert.equal(completionUsageBound(valid).tokens,null);
+});
+for(const metadata of [
+  {promptTokenCount:100,candidatesTokenCount:20},
+  {promptTokenCount:100,candidatesTokenCount:20,totalTokenCount:99},
+  {promptTokenCount:100,candidatesTokenCount:20,totalTokenCount:110},
+  {promptTokenCount:100,candidatesTokenCount:20,thoughtsTokenCount:10,totalTokenCount:125},
+  {promptTokenCount:100,candidatesTokenCount:20,totalTokenCount:'120'},
+  {promptTokenCount:100,candidatesTokenCount:20,totalTokenCount:Infinity}
+])test('unusable or inconsistent totals cannot reduce reserved capacity '+JSON.stringify(metadata),()=>{
+  assert.equal(completionUsageBound(normalizeUsage('gemini',{usageMetadata:metadata})).tokens,null);
+});
+test('budget-exhausted errors retain sanitized construction failures, never provider arguments',async()=>{
+  const invalid=dashboardExample();invalid.design.accent='bad';const m=mock([submit('gemini',invalid),call('gemini','inspect_app',{}),call('gemini','inspect_app',{})]);
+  await assert.rejects(buildComposable({prompt:'Build'},env(),m.fetcher),e=>{assert.equal(e.code,'AI_BUDGET_EXCEEDED');assert.equal(e.trace.length,3);assert.equal(e.trace[0].tool,'submit_app');assert.match(e.trace[0].error.message,/Invalid color/);assert.doesNotMatch(JSON.stringify(e.trace),/fixture-google|opaque-test|thoughtSignature|payload/);return true;});
 });
 test('inspection returns transitive dependencies without interpreting literal data as references',()=>{
   const p=quizExample();p.state[0].initial[0].collection='literal-not-a-reference';

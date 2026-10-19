@@ -2,7 +2,7 @@ import {validateProgram,compatible,applyEdits} from '../docs/v3/kernel.mjs';
 import {inspectProgram,preflight} from '../docs/v3/checks.mjs';
 import {EFFICIENT_INSTRUCTIONS,EFFICIENT_TOOLS} from './composable-spec.mjs';
 import {BuildError,text,bytes} from './build-io.mjs';
-import {adapterConfig,createAdapter,sendAdapterRequest,normalizeUsage} from './construction-adapters.mjs';
+import {adapterConfig,createAdapter,sendAdapterRequest,normalizeUsage,completionUsageBound} from './construction-adapters.mjs';
 import {contextIndex,inspectStructure,compactChecks} from './construction-context.mjs';
 export {BuildError,boundedJSON} from './build-io.mjs';
 export function composableConfig(env){
@@ -68,13 +68,15 @@ export async function buildComposable({prompt,current=null,revision=0,conversati
       const allocation=Math.min(4096,remaining),request=adapter.request(allocation),size=bytes(request.init.body);
       if(inputBytes+size>220000)throw new BuildError('AI_BUDGET_EXCEEDED','Construction input budget exhausted. Try a smaller change.',422);
       inputBytes+=size;calls++;remaining-=allocation;
-      const metric={inputBytes:size,allocatedCompletionTokens:allocation,reported:null,estimatedOutputTokens:null,chargedCompletionTokens:allocation};turns.push(metric);
+      const metric={inputBytes:size,allocatedCompletionTokens:allocation,reported:null,estimatedOutputTokens:null,chargedCompletionTokens:allocation,completionChargeBasis:'reserved-allocation'};turns.push(metric);
       const deadline=AbortSignal.timeout(Math.min(30000,left));const signal=options.signal?AbortSignal.any([options.signal,deadline]):deadline;
       const data=await sendAdapterRequest(request,fetcher,signal,d=>{metric.reported=normalizeUsage(config.provider,d);});
       const parsed=adapter.parse(data);metric.estimatedOutputTokens=parsed.estimatedOutputTokens;
-      const u=parsed.usage,reported=u.outputIncludesThinking?u.outputTokens:(u.outputTokens!==null&&u.thinkingTokens!==null?u.outputTokens+u.thinkingTokens:null);
-      // Unknown usage spends the entire allocation; cached/thinking subsets are never added twice.
-      metric.chargedCompletionTokens=reported===null?allocation:Math.max(reported,parsed.estimatedOutputTokens);remaining+=allocation-metric.chargedCompletionTokens;
+      const bound=completionUsageBound(parsed.usage);
+      // Refund only from complete counts or a conservative total-minus-input bound.
+      // Missing thinking details stay unknown; missing usable counts spend the allocation.
+      metric.completionChargeBasis=bound.tokens===null?'reserved-allocation':bound.basis;
+      metric.chargedCompletionTokens=bound.tokens===null?allocation:Math.max(bound.tokens,parsed.estimatedOutputTokens);remaining+=allocation-metric.chargedCompletionTokens;
       if(remaining<0)throw new BuildError('AI_BUDGET_EXCEEDED','Completion budget exceeded. No draft applied.',422);
       const call=parsed.call,known=EFFICIENT_TOOLS.some(t=>t.function.name===call.name);let result;
       try{
@@ -84,7 +86,7 @@ export async function buildComposable({prompt,current=null,revision=0,conversati
         trace.push({tool:call.name,ok:true,tests:result.checks?.tests?.total??result.tests?.total??null});
       }catch(e){
         repairs++;result={error:{code:'INVALID_CONSTRUCTION',message:(e instanceof SyntaxError?'Tool payload is not JSON.':e.message).slice(0,300),operation:known?call.name:'unknown'},revision:session.revision(),diagnostics:session.diagnostics(),guidance:'Repair the draft using stable IDs; inspect exact structure if needed. No changes applied to user data.'};
-        trace.push({tool:known?call.name:'unknown',ok:false});
+        trace.push({tool:known?call.name:'unknown',ok:false,error:result.error,revision:session.revision()});
       }
       if(result.finished){const {finished,...final}=result;return {...final,usage:usage(),trace};}
       // Exact inspection is explicitly requested. Automatic feedback never echoes an unchanged app.
@@ -92,5 +94,5 @@ export async function buildComposable({prompt,current=null,revision=0,conversati
       adapter.continue(feedback);
     }
     throw new BuildError('AI_BUDGET_EXCEEDED','Construction-turn or completion budget exhausted without a complete tested submission. No changes applied.',422);
-  }catch(e){if(e instanceof BuildError){e.usage=usage();throw e;}throw new BuildError('BUILD_UNAVAILABLE','Construction failed. No changes applied.',503);}
+  }catch(e){if(e instanceof BuildError){e.usage=usage();e.trace=structuredClone(trace);throw e;}throw new BuildError('BUILD_UNAVAILABLE','Construction failed. No changes applied.',503);}
 }

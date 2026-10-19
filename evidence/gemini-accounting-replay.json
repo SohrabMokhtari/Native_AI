@@ -1,0 +1,39 @@
+{
+  "source": "Owner-reported CLI metrics in conversation, not an agent live call or captured model content",
+  "original": {
+    "error": "AI_BUDGET_EXCEEDED",
+    "calls": 2,
+    "repairs": 1,
+    "requests": [
+      {
+        "status": 200,
+        "inputTokens": 2058,
+        "outputTokens": 2312,
+        "totalTokens": 4370,
+        "thinkingTokens": null
+      },
+      {
+        "status": 200,
+        "inputTokens": 4454,
+        "outputTokens": 10,
+        "totalTokens": 4464,
+        "thinkingTokens": null
+      }
+    ],
+    "chargedCompletionTokens": [
+      4096,
+      4096
+    ]
+  },
+  "correctedConservativeCompletionBounds": [
+    2312,
+    10
+  ],
+  "thinkingBreakdown": "Remains unknown",
+  "limits": {
+    "maxCalls": 3,
+    "completionTokens": 8192,
+    "perCallCompletionTokens": 4096
+  },
+  "verification": "Synthetic regression with these usage counts plus fictional local tool steps permits a third repair call. Original model output and initial validation cause are unknown. Actual local workerd regression also passed. Live correction rerun NOT RUN."
+}
