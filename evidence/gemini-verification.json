@@ -6,12 +6,12 @@
     "fail": 0
   },
   "currentTests": {
-    "pass": 418,
+    "pass": 430,
     "fail": 0
   },
   "syntaxModules": 38,
-  "tapSHA256": "f24e31becc41aa2b7ba71e0711466f4df2ecef9eeacd45adc27c5990e0a83588",
-  "liveProvider": "Owner reported failed 503, 200/200 accounting stop, 200/200/200 schema/call-limit stop, and 200 with local check failure followed by repair 503. No successful live build; failed-check trace correction live rerun NOT RUN.",
+  "tapSHA256": "1e48b336780f7bb6b7a7a83f060608e6ab307b14bbc9b9312766c114f4dc222d",
+  "liveProvider": "Owner-reported optimized-gemini/create PASS: two calls, one repair, two supplied tests plus independent acceptance/export, 47571 ms. Earlier failed attempts retained in documentation. No matched provider comparison. Timeout/progress follow-up live rerun NOT RUN; no agent live calls or credential reads.",
   "deployedEndToEnd": "NOT RUN",
   "followupBaselineTests": {
     "pass": 375,
@@ -23,6 +23,10 @@
   },
   "failedCheckBaselineTests": {
     "pass": 409,
+    "fail": 0
+  },
+  "timeoutProgressBaselineTests": {
+    "pass": 418,
     "fail": 0
   }
 }

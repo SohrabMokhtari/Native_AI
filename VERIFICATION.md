@@ -1,6 +1,6 @@
 # Current verification
 
-October 19, 2026: [experimental Gemini and efficient v3 builder report](VERIFICATION-gemini.md). It separates baseline, synthetic tests, actual browser storage/navigation, actual local workerd, and unrun live inference/deployment. Historical results below are retained as historical evidence.
+October 19, 2026: [experimental Gemini and efficient v3 builder report](VERIFICATION-gemini.md). It separates baseline, synthetic tests, actual browser storage/navigation, actual local workerd, one owner-reported successful live Gemini creation evaluation, and unrun deployed verification. Historical results below are retained as historical evidence.
 
 # Verification — Cloudflare redirect compatibility fix
 

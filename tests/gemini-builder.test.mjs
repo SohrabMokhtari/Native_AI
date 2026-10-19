@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {buildComposable,composableConfig,createConstructionSession,BuildError} from '../ai/composable-agent.mjs';
-import {createAdapter,adapterConfig,normalizeUsage,completionUsageBound} from '../ai/construction-adapters.mjs';
+import {createAdapter,adapterConfig,normalizeUsage,completionUsageBound,sendAdapterRequest} from '../ai/construction-adapters.mjs';
 import {contextIndex,inspectStructure} from '../ai/construction-context.mjs';
 import {EFFICIENT_TOOLS} from '../ai/composable-spec.mjs';
 import {handleComposable} from '../ai/composable-gateway.mjs';
@@ -219,4 +219,27 @@ test('render preflight diagnostics survive a failed repair connection with no pr
  const p=dashboardExample();p.pages[0].root.children.push({id:'broken-total',type:'stat',label:'Private design label not for trace',value:['div',1,0]});
  const m=mock([submit('gemini',p),new Error('private transport details')]);
  await assert.rejects(buildComposable({prompt:'Build'},env(),m.fetcher),e=>{assert.equal(e.code,'AI_UNAVAILABLE');assert.equal(e.trace[0].draftChecks.issues[0].node,'broken-total');assert.match(e.trace[0].draftChecks.issues[0].error,/Division by zero/);assert.doesNotMatch(JSON.stringify(e.trace),/private transport details|Private design label|opaque-test/);return true;});
+});
+for(const provider of ['groq','gemini'])for(const stage of ['headers','body'])test(provider+': abort ends stalled '+stage+' even when transport ignores cancellation',{timeout:1000},async()=>{
+ const controller=new AbortController(),before=dashboardExample();let calls=0,cancelled=0,body;
+ const pending=buildComposable({prompt:'Stall fixture',current:before},env(provider),async()=>{
+   calls++;if(stage==='headers')return new Promise(()=>{});
+   body=new ReadableStream({cancel(){cancelled++;return new Promise(()=>{});}});return new Response(body);
+ },{signal:controller.signal});
+ const timer=setTimeout(()=>controller.abort(new DOMException('private fixture timeout','TimeoutError')),10);
+ try{await assert.rejects(pending,e=>{assert.equal(e.code,'AI_TIMEOUT');assert.equal(e.usage.calls,1);assert.deepEqual(e.trace,[]);assert.doesNotMatch(e.message,/private fixture/);return true;});}
+ finally{clearTimeout(timer);}
+ assert.equal(calls,1);assert.deepEqual(before,dashboardExample());
+ if(stage==='body'){assert.equal(cancelled,1);assert.equal(body.locked,false);}
+});
+for(const provider of ['groq','gemini'])for(const stage of ['HTTP error','oversized body'])test(provider+': stalled cleanup cannot delay '+stage,{timeout:1000},async()=>{
+ let calls=0,cancelled=0;
+ const fetcher=async()=>{calls++;return stage==='HTTP error'?{ok:false,status:503,body:{cancel(){cancelled++;return new Promise(()=>{});}}}:new Response(new ReadableStream({start(c){c.enqueue(new Uint8Array(270000));},cancel(){cancelled++;return new Promise(()=>{});}}));};
+ await assert.rejects(buildComposable({prompt:'Cleanup fixture'},env(provider),fetcher),code(stage==='HTTP error'?'AI_PROVIDER_ERROR':'AI_RESPONSE_TOO_LARGE'));
+ assert.equal(calls,1);assert.equal(cancelled,1);
+});
+test('an already cancelled transport sends zero requests even with a private abort reason',async()=>{
+ const controller=new AbortController();controller.abort('private cancellation reason');let calls=0;
+ await assert.rejects(sendAdapterRequest({url:'https://fixture.invalid',init:{}},()=>{calls++;},controller.signal),e=>code('AI_TIMEOUT')(e)&&!e.message.includes('private'));
+ assert.equal(calls,0);
 });

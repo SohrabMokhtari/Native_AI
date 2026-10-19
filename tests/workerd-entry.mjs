@@ -49,6 +49,18 @@ export default {async fetch(){
         check(!JSON.stringify(e.trace).includes('runtime-fixture'),'private metadata absent');
       }
       checks.push(provider+': failed behavior evidence survives provider 503 without retry');
+      for(const stage of ['headers','body']){
+        const controller=new AbortController();let n=0;
+        const timer=setTimeout(()=>controller.abort(),15);
+        try{
+          await buildComposable({prompt:'Stalled transport fixture'},env,async()=>{n++;return stage==='headers'?new Promise(()=>{}):new Response(new ReadableStream({cancel(){return new Promise(()=>{});}}));},{signal:controller.signal});
+          throw new Error('accepted stalled '+stage);
+        }catch(e){check(e instanceof BuildError&&e.code==='AI_TIMEOUT'&&n===1,'bounded '+stage);}
+        finally{clearTimeout(timer);}
+      }
+      try{await buildComposable({prompt:'Stalled cleanup fixture'},env,async()=>({ok:false,status:503,body:{cancel:()=>new Promise(()=>{})}}));throw new Error('accepted stalled cleanup');}
+      catch(e){check(e instanceof BuildError&&e.code==='AI_PROVIDER_ERROR','nonblocking cleanup');}
+      checks.push(provider+': enforced header/body cancellation and nonblocking error cleanup');
       for(const status of [302,400,401,403,404,429,500]){let n=0;try{await buildComposable({prompt:'Failure fixture'},env,async()=>{n++;return new Response(null,{status});});throw new Error('accepted failure');}catch(e){check(e instanceof BuildError&&n===1,'no retry');check(!e.message.includes('runtime-fixture'),'sanitized');}checks.push(provider+': HTTP '+status);}
     }
     return Response.json({passed:true,runtime:'actual workerd; synthetic inference only',checks});

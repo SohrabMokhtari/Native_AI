@@ -1,4 +1,4 @@
-import {BuildError,text,boundedJSON,bytes} from './build-io.mjs';
+import {BuildError,text,boundedJSON,bytes,withAbort,cancelBody} from './build-io.mjs';
 const count=n=>Number.isSafeInteger(n)&&n>=0?n:null;
 const invalid=()=>new BuildError('AI_INVALID_RESPONSE','Malformed provider response. No changes applied.');
 const incomplete=()=>new BuildError('AI_INCOMPLETE_RESPONSE','Expected exactly one complete local tool call. Try a smaller request. No changes applied.');
@@ -81,8 +81,8 @@ export function createAdapter(config,{instructions,input,tools}){
 /** Fixed hosts, manual redirects, bounded bytes, caller-owned signal/deadline, no retries. */
 export async function sendAdapterRequest(request,fetcher,signal,onData){
   try{
-    const r=await fetcher(request.url,{...request.init,signal});
-    if(!r.ok){try{await r.body?.cancel();}catch{}
+    const r=await withAbort(()=>fetcher(request.url,{...request.init,signal}),signal);
+    if(!r.ok){cancelBody(r.body);
       if(r.status>=300&&r.status<400)throw new BuildError('AI_REDIRECT_REJECTED','Provider redirect rejected. Credentials were not forwarded.');
       if(r.status===429){const raw=r.headers?.get('Retry-After');const retry=raw&&/^\d+$/.test(raw)?Math.min(86400,Math.max(1,Number(raw))):60;throw new BuildError('AI_QUOTA_EXCEEDED','Provider quota is busy or exhausted. No automatic retry.',429,retry);}
       if([401,403].includes(r.status))throw new BuildError('AI_CREDENTIALS_REJECTED','Provider credentials or model access require operator attention.',503);
@@ -90,10 +90,10 @@ export async function sendAdapterRequest(request,fetcher,signal,onData){
       if(r.status===400)throw new BuildError('AI_REQUEST_REJECTED','Provider rejected the request contract. Operator attention required.');
       throw new BuildError('AI_PROVIDER_ERROR','Provider could not complete this construction request.');
     }
-    const data=await boundedJSON(r,262144);onData?.(data);return data;
+    const data=await boundedJSON(r,262144,signal);onData?.(data);return data;
   }catch(e){
     if(e instanceof BuildError)throw e;
-    if(['TimeoutError','AbortError'].includes(e?.name))throw new BuildError('AI_TIMEOUT','Provider request timed out or was cancelled. No changes applied.',504);
+    if(signal?.aborted||['TimeoutError','AbortError'].includes(e?.name))throw new BuildError('AI_TIMEOUT','Provider request timed out or was cancelled. No changes applied.',504);
     if(e instanceof SyntaxError)throw invalid();
     throw new BuildError('AI_UNAVAILABLE','Provider connection did not complete. No changes applied.',503);
   }

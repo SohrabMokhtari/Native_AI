@@ -1,0 +1,54 @@
+{
+  "source": "Owner-pasted live CLI result on October 19, 2026. Agent did not execute inference, read credentials or independently recover the generated app.",
+  "runCommit": "UNKNOWN",
+  "configuration": "optimized-gemini",
+  "case": "create",
+  "provider": "gemini",
+  "model": "gemini-3.8-flash",
+  "success": true,
+  "calls": 2,
+  "maxCalls": 3,
+  "repairs": 1,
+  "elapsedMs": 47571,
+  "inputBytes": 29025,
+  "reservedOutputTokens": 8192,
+  "chargedCompletionTokens": 5657,
+  "remainingCompletionBudget": 2535,
+  "httpStatuses": [
+    200,
+    200
+  ],
+  "suppliedTestsPassed": 2,
+  "reportedUsage": {
+    "inputTokens": 6659,
+    "outputTokens": 4166,
+    "thinkingTokens": null,
+    "cachedTokens": null,
+    "totalTokens": 10825
+  },
+  "trace": [
+    {
+      "tool": "submit_app",
+      "ok": false,
+      "message": "Invalid or duplicate parameter IDs.",
+      "revision": 0,
+      "hasDraft": false
+    },
+    {
+      "tool": "submit_app",
+      "ok": true,
+      "tests": 2
+    }
+  ],
+  "inputUnchanged": true,
+  "dataPreserved": true,
+  "exported": true,
+  "limitations": [
+    "Owner-reported smoke result; raw generated app unavailable",
+    "New-app fixture starts without records; no evidence for live record-preserving edits",
+    "Exported means HTML constructed and checked in memory, not a saved file or browser launch",
+    "No deployed Worker, real Turnstile or browser-provider round trip verified",
+    "No matched baseline/optimized Groq comparison",
+    "No live rerun after subsequent timeout/progress changes"
+  ]
+}
