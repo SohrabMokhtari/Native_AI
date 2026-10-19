@@ -1,0 +1,10 @@
+{
+  "method": "Actual local Chromium loading exported HTML from a file URL in a fresh browser context. No inference or external requests.",
+  "passed": true,
+  "checks": [
+    "self-contained kernel and renderer load",
+    "record creation",
+    "reload preserves local record",
+    "no page exceptions"
+  ]
+}

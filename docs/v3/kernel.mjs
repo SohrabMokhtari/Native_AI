@@ -29,9 +29,17 @@ export function createKernel() {
     }
     seen.delete(v);
   }
-  function keys(v, allowed, required = allowed) {
-    need(plain(v), 'Expected an object.');
-    need(Object.keys(v).every(k => allowed.includes(k)) && required.every(k => own(v, k)), 'Unknown or missing property.');
+  const propertyName=k=>/^[a-zA-Z][a-zA-Z0-9_-]{0,47}$/.test(k)&&!/^(AIza|gsk_|sk-)/.test(k)?k:'[redacted property]';
+  function keys(v, allowed, required = allowed, path = null) {
+    if(path===null){
+      need(plain(v), 'Expected an object.');
+      need(Object.keys(v).every(k => allowed.includes(k)) && required.every(k => own(v, k)), 'Unknown or missing property.');return;
+    }
+    const object=plain(v),missing=required.filter(k=>!own(v,k)),unknown=object?Object.keys(v).filter(k=>!allowed.includes(k)):[];
+    if(object&&!missing.length&&!unknown.length)return;
+    const details={path,expectedType:'object',missingFields:missing,unknownFields:unknown.slice(0,8).map(propertyName),unknownFieldCount:unknown.length,requiredFields:required,allowedFields:allowed};
+    const e=new Error(`${object?'Unknown or missing property':'Expected an object'} at ${path}.${missing.length?` Missing: ${missing.join(', ')}.`:''}${unknown.length?` Unexpected: ${details.unknownFields.join(', ')}${unknown.length>8?' (more omitted)':''}.`:''}`);
+    e.code='INVALID_PROGRAM_SCHEMA';e.details=details;throw e;
   }
   const types = ['number', 'text', 'boolean', 'list', 'object', 'any'];
   function typed(v, type) {
@@ -49,10 +57,15 @@ export function createKernel() {
   const NODE_TYPES = ['stack','row','grid','card','heading','text','badge','button','input','select','toggle','stat','progress','collection','repeat','divider'];
   function validateProgram(p) {
     json(p); need(new TextEncoder().encode(JSON.stringify(p)).length <= LIMITS.programBytes, 'Program too large.');
-    keys(p, ['format','id','name','description','design','collections','state','functions','actions','pages','tests']);
+    // Per-validation paths: no shared diagnostic/session state and no reflected values.
+    const paths=new WeakMap();
+    function locate(v,path){if(!v||typeof v!=='object')return;if(paths.has(v))return;paths.set(v,path);for(const k of Object.keys(v))locate(v[k],Array.isArray(v)?`${path}[${k}]`:`${path}.${propertyName(k)}`);}
+    locate(p,'$');
+    const programKeys=(v,allowed,required=allowed,fallback='$')=>keys(v,allowed,required,paths.get(v)??fallback);
+    programKeys(p, ['format','id','name','description','design','collections','state','functions','actions','pages','tests']);
     need(p.format === FORMAT && id(p.id), 'Invalid program format or ID.');
     need(str(p.name,80) && str(p.description,500,true), 'Invalid program name or description.');
-    keys(p.design, ['mode','accent','density','font','radius','navigation','width']);
+    programKeys(p.design, ['mode','accent','density','font','radius','navigation','width'],undefined,'$.design');
     need(['light','dark'].includes(p.design.mode) && /^#[0-9a-fA-F]{6}$/.test(p.design.accent), 'Invalid color design.');
     need(['compact','comfortable'].includes(p.design.density) && ['system','serif','mono'].includes(p.design.font), 'Invalid typography or density.');
     need(Number.isInteger(p.design.radius) && p.design.radius >= 0 && p.design.radius <= 24 && ['top','sidebar'].includes(p.design.navigation) && Number.isInteger(p.design.width) && p.design.width >= 640 && p.design.width <= 1600, 'Invalid layout design.');
@@ -63,20 +76,20 @@ export function createKernel() {
     }
     const cs = indexed(p.collections,8,'collection'), ss = indexed(p.state,32,'state'), fs = indexed(p.functions,24,'function'), as = indexed(p.actions,40,'action'), ps = indexed(p.pages,12,'page',1);
     for (const c of cs.values()) {
-      keys(c,['id','name','fields']); need(str(c.name,60), 'Invalid collection name.'); indexed(c.fields,24,'field',1);
+      programKeys(c,['id','name','fields']); need(str(c.name,60), 'Invalid collection name.'); indexed(c.fields,24,'field',1);
       for (const f of c.fields) {
-        keys(f,['id','label','type','required','options']);
+        programKeys(f,['id','label','type','required','options']);
         need(str(f.label,60) && ['text','longtext','number','date','select','boolean'].includes(f.type) && typeof f.required === 'boolean', 'Invalid field.');
         need(Array.isArray(f.options) && f.options.length <= 16 && new Set(f.options).size === f.options.length && f.options.every(o => str(o,60)), 'Invalid choices.');
         need(f.type === 'select' ? f.options.length > 0 : f.options.length === 0, 'Only select fields have choices.');
       }
     }
-    for (const s of ss.values()) { keys(s,['id','type','initial']); need(types.includes(s.type) && s.type !== 'any', 'Invalid state type.'); typed(s.initial,s.type); }
+    for (const s of ss.values()) { programKeys(s,['id','type','initial']); need(types.includes(s.type) && s.type !== 'any', 'Invalid state type.'); typed(s.initial,s.type); }
     let expressions = 0, nodes = 0;
     function expr(x, depth = 0, args = null) {
       need(depth <= LIMITS.depth && ++expressions <= LIMITS.expressions, 'Expression complexity limit exceeded.');
       if (x === null || ['boolean','number','string'].includes(typeof x)) return;
-      if (plain(x)) { keys(x,['lit']); json(x.lit); return; }
+      if (plain(x)) { programKeys(x,['lit']); json(x.lit); return; }
       need(Array.isArray(x) && own(ARITY,x[0]), 'Unknown expression operation.');
       const [op,...xs] = x, [lo,hi] = ARITY[op]; need(xs.length >= lo && xs.length <= hi,'Wrong expression arity.');
       if (['state','rows','call'].includes(op)) need((op === 'state' ? ss : op === 'rows' ? cs : fs).has(xs[0]), 'Expression references a missing object.');
@@ -88,34 +101,34 @@ export function createKernel() {
       } else xs.forEach(v => expr(v,depth+1,args));
     }
     for (const f of fs.values()) {
-      keys(f,['id','params','returns','body']); indexed(f.params,8,'parameter');
-      need(f.params.every(v => { keys(v,['id','type']); return types.includes(v.type); }) && types.includes(f.returns), 'Invalid function signature.');
+      programKeys(f,['id','params','returns','body']); indexed(f.params,8,'parameter');
+      need(f.params.every(v => { programKeys(v,['id','type']); return types.includes(v.type); }) && types.includes(f.returns), 'Invalid function signature.');
       expr(f.body,0,f.params.map(v => v.id));
     }
     function steps(a, depth = 0) {
       need(depth <= 12 && Array.isArray(a) && a.length <= 40, 'Action complexity limit exceeded.');
       for (const s of a) {
         need(plain(s), 'Invalid action step.');
-        if (s.op === 'set') { keys(s,['op','state','value']); need(ss.has(s.state),'Missing state.'); expr(s.value); }
-        else if (s.op === 'if') { keys(s,['op','when','then','else']); expr(s.when); steps(s.then,depth+1); steps(s.else,depth+1); }
-        else if (s.op === 'each') { keys(s,['op','items','do']); expr(s.items); steps(s.do,depth+1); }
-        else if (s.op === 'call') { keys(s,['op','action']); need(as.has(s.action),'Missing action.'); }
-        else if (s.op === 'navigate') { keys(s,['op','page']); need(ps.has(s.page),'Missing page.'); }
+        if (s.op === 'set') { programKeys(s,['op','state','value']); need(ss.has(s.state),'Missing state.'); expr(s.value); }
+        else if (s.op === 'if') { programKeys(s,['op','when','then','else']); expr(s.when); steps(s.then,depth+1); steps(s.else,depth+1); }
+        else if (s.op === 'each') { programKeys(s,['op','items','do']); expr(s.items); steps(s.do,depth+1); }
+        else if (s.op === 'call') { programKeys(s,['op','action']); need(as.has(s.action),'Missing action.'); }
+        else if (s.op === 'navigate') { programKeys(s,['op','page']); need(ps.has(s.page),'Missing page.'); }
         else if (['create','update','delete'].includes(s.op)) {
-          const ks = ['op','collection',...(s.op !== 'create' ? ['id'] : []),...(s.op !== 'delete' ? ['values'] : [])]; keys(s,ks);
+          const ks = ['op','collection',...(s.op !== 'create' ? ['id'] : []),...(s.op !== 'delete' ? ['values'] : [])]; programKeys(s,ks);
           need(cs.has(s.collection),'Missing action collection.'); if (s.op !== 'create') expr(s.id);
           if (s.op !== 'delete') { need(plain(s.values),'Invalid record values.'); for (const k of Object.keys(s.values)) { need(cs.get(s.collection).fields.some(f=>f.id===k),'Unknown action field.'); expr(s.values[k]); } }
         } else fail('Unknown action operation.');
       }
     }
-    for (const a of as.values()) { keys(a,['id','steps']); steps(a.steps); }
+    for (const a of as.values()) { programKeys(a,['id','steps']); steps(a.steps); }
     const nodeIds = new Set();
-    function node(n, depth = 0) {
+    function node(n, depth = 0, path = '$') {
       need(depth <= 16 && ++nodes <= LIMITS.nodes,'UI complexity limit exceeded.');
-      keys(n,['id','type','children','text','value','visible','disabled','action','style','options','collection','layout','groupField','titleField','fields','filter','highlight','items','max','label'],['id','type']);
+      programKeys(n,['id','type','children','text','value','visible','disabled','action','style','options','collection','layout','groupField','titleField','fields','filter','highlight','items','max','label'],['id','type'],path);
       need(id(n.id) && !nodeIds.has(n.id) && NODE_TYPES.includes(n.type),'Invalid or duplicate UI node.'); nodeIds.add(n.id);
       if (own(n,'style')) {
-        keys(n.style,['gap','padding','columns','size','align','justify','tone','weight'],[]);
+        programKeys(n.style,['gap','padding','columns','size','align','justify','tone','weight'],[],`${paths.get(n)??path}.style`);
         for (const k of ['gap','padding']) if(own(n.style,k)) need(Number.isInteger(n.style[k]) && n.style[k]>=0 && n.style[k]<=64,'Invalid spacing.');
         if(own(n.style,'columns'))need(Number.isInteger(n.style.columns)&&n.style.columns>=1&&n.style.columns<=6,'Invalid grid.');
         if(own(n.style,'size'))need(Number.isInteger(n.style.size)&&n.style.size>=12&&n.style.size<=64,'Invalid font size.');
@@ -135,9 +148,9 @@ export function createKernel() {
         if(n.layout==='board')need(c.fields.some(f=>f.id===n.groupField&&f.type==='select'),'Board needs a select field.');
         if(own(n,'fields'))need(Array.isArray(n.fields)&&n.fields.every(k=>c.fields.some(f=>f.id===k)),'Invalid visible fields.');
       }
-      if(own(n,'children')){need(Array.isArray(n.children)&&n.children.length<=60,'Invalid children.');n.children.forEach(c=>node(c,depth+1));}
+      if(own(n,'children')){need(Array.isArray(n.children)&&n.children.length<=60,'Invalid children.');n.children.forEach((c,i)=>node(c,depth+1,`${paths.get(n)??path}.children[${i}]`));}
     }
-    for(const page of ps.values()){keys(page,['id','title','root']);need(str(page.title,60),'Invalid page title.');node(page.root);}
+    for(const page of ps.values()){programKeys(page,['id','title','root']);need(str(page.title,60),'Invalid page title.');node(page.root,0,`${paths.get(page)}.root`);}
     // Reject recursive call graphs before execution; bounded iteration remains available.
     function acyclic(map, refs) {
       const done = new Set(), active = new Set();
@@ -148,7 +161,7 @@ export function createKernel() {
     function arefs(a,out=[]) { for(const s of a){if(s.op==='call')out.push(s.action);if(s.op==='if'){arefs(s.then,out);arefs(s.else,out);}if(s.op==='each')arefs(s.do,out);}return out; }
     acyclic(fs,f=>frefs(f.body));acyclic(as,a=>arefs(a.steps));
     need(Array.isArray(p.tests)&&p.tests.length<=16,'Too many tests.');
-    for(const t of p.tests){keys(t,['name','state','data','actions','expect']);need(str(t.name,80)&&plain(t.state)&&plain(t.data)&&Array.isArray(t.actions)&&t.actions.length<=12&&Array.isArray(t.expect)&&t.expect.length>0&&t.expect.length<=12,'Invalid test.');for(const k of Object.keys(t.state))need(ss.has(k),'Unknown test state.');for(const k of Object.keys(t.data))need(cs.has(k),'Unknown test collection.');for(const a of t.actions){keys(a,['id','event']);need(as.has(a.id)&&plain(a.event),'Invalid test action.');}for(const e of t.expect){keys(e,['value','equals']);expr(e.value);json(e.equals);}}
+    for(const t of p.tests){programKeys(t,['name','state','data','actions','expect']);need(str(t.name,80)&&plain(t.state)&&plain(t.data)&&Array.isArray(t.actions)&&t.actions.length<=12&&Array.isArray(t.expect)&&t.expect.length>0&&t.expect.length<=12,'Invalid test.');for(const k of Object.keys(t.state))need(ss.has(k),'Unknown test state.');for(const k of Object.keys(t.data))need(cs.has(k),'Unknown test collection.');for(const a of t.actions){programKeys(a,['id','event']);need(as.has(a.id)&&plain(a.event),'Invalid test action.');}for(const e of t.expect){programKeys(e,['value','equals']);expr(e.value);json(e.equals);}}
     return copy(p);
   }
   function rowValues(c, values) {

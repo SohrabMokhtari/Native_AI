@@ -29,6 +29,13 @@ export default {async fetch(){
         });
         check(fixed.status==='ready'&&fixed.usage.calls===3&&fixed.usage.repairs===1,'three-call repair');check(fixed.usage.turns[0].reported.thinkingTokens===null&&fixed.usage.turns[0].chargedCompletionTokens===2312,'conservative charge');check(fixed.trace[0].error.message==='Tool payload is not JSON.','sanitized repair trace');checks.push('gemini: missing thinking breakdown permits bounded third-call repair and local diagnostics');
       }
+      let schemaCalls=0;const invalid=quizExample();delete invalid.tests[0].data;
+      const repaired=await buildComposable({prompt:'Strict schema repair fixture'},env,async(url,init)=>{
+        schemaCalls++;
+        if(schemaCalls===2){const body=JSON.parse(init.body),feedback=provider==='gemini'?body.contents.at(-1).parts[0].functionResponse.response:JSON.parse(body.messages.at(-1).content);check(feedback.error.details.path==='$.tests[0]','schema path');check(feedback.error.details.missingFields[0]==='data','missing key');check(feedback.draftState.hasDraft===false&&feedback.draftState.nextPayload==='program','rejected draft state');check(feedback.budget.remainingCalls===2,'repair capacity');}
+        return Response.json(response('submit_app',{payload:JSON.stringify({program:schemaCalls===1?invalid:quizExample()}),message:'Synthetic schema repair.',revision:0}));
+      });
+      check(repaired.status==='ready'&&repaired.usage.repairs===1&&schemaCalls===2,'schema repaired');checks.push(provider+': exact schema path, draft state, call budget and complete resubmission');
       for(const status of [302,400,401,403,404,429,500]){let n=0;try{await buildComposable({prompt:'Failure fixture'},env,async()=>{n++;return new Response(null,{status});});throw new Error('accepted failure');}catch(e){check(e instanceof BuildError&&n===1,'no retry');check(!e.message.includes('runtime-fixture'),'sanitized');}checks.push(provider+': HTTP '+status);}
     }
     return Response.json({passed:true,runtime:'actual workerd; synthetic inference only',checks});

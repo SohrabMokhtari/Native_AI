@@ -19,7 +19,7 @@ test('evaluation failures expose local repair trace and charge basis without pri
   const r=await evaluate(options,{GEMINI_API_KEY:'never-print-this-secret'},async()=>{
     calls++;return Response.json({candidates:[{finishReason:'STOP',content:{role:'model',parts:[{functionCall:{name:'submit_app',args:{payload:'{',message:'Synthetic trace test',revision:0}},thoughtSignature:'private-opaque-signature'}]}}],usageMetadata:{promptTokenCount:100,candidatesTokenCount:20,totalTokenCount:120}});
   });
-  const row=r.results[0];assert.equal(calls,3);assert.equal(row.error,'AI_BUDGET_EXCEEDED');assert.equal(row.trace.length,3);assert.match(row.trace[0].error.message,/payload is not JSON/);
+  const row=r.results[0];assert.equal(calls,3);assert.equal(row.error,'AI_BUDGET_EXCEEDED');assert.equal(row.budgetLimit,'calls');assert.equal(row.trace.length,3);assert.match(row.trace[0].error.message,/payload is not JSON/);
   assert.equal(row.buildUsage.turns[0].completionChargeBasis,'reported-total-minus-input-upper-bound');assert.equal(row.buildUsage.turns[0].reported.thinkingTokens,null);
   assert.doesNotMatch(JSON.stringify(r),/never-print-this-secret|private-opaque-signature|Synthetic trace test/);
 });

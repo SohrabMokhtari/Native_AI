@@ -55,3 +55,30 @@ test('v3 export never embeds a saved snapshot',()=>{const p=dashboardExample(),s
 test('v3 composes dynamic list and object values',()=>{assert.deepEqual(expr(['list',['object','x',['add',2,3]],['object','x',6]]),[{x:5},{x:6}]);assert.deepEqual(expr(['merge',{lit:{x:1}},['object','y',2]]),{x:1,y:2});assert.deepEqual(expr(['append',{lit:[1,2]},3]),[1,2,3]);});
 test('v3 map can return and merge the full item',()=>assert.deepEqual(expr(['map',{lit:[{n:2},{n:3}]},['merge',['item'],['object','double',['mul',['row','n'],2]]]]),[{n:2,double:4},{n:3,double:6}]));
 test('v3 object construction cannot use unsafe keys',()=>assert.throws(()=>expr(['object','__proto__',1])));
+for(const [name,factory,change,path,missing,unknown] of [
+ ['field options',dashboardExample,p=>delete p.collections[0].fields[0].options,'$.collections[0].fields[0]',['options'],[]],
+ ['field required',dashboardExample,p=>delete p.collections[0].fields[1].required,'$.collections[0].fields[1]',['required'],[]],
+ ['design width',dashboardExample,p=>delete p.design.width,'$.design',['width'],[]],
+ ['node type',dashboardExample,p=>delete p.pages[0].root.type,'$.pages[0].root',['type'],[]],
+ ['test fixture maps',quizExample,p=>{delete p.tests[0].state;delete p.tests[0].data;},'$.tests[0]',['state','data'],[]],
+ ['test event',quizExample,p=>delete p.tests[0].actions[0].event,'$.tests[0].actions[0]',['event'],[]],
+ ['test equals',quizExample,p=>delete p.tests[0].expect[0].equals,'$.tests[0].expect[0]',['equals'],[]],
+ ['action value',quizExample,p=>delete p.actions[0].steps[0].value,'$.actions[0].steps[0]',['value'],[]],
+ ['function parameter type',dashboardExample,p=>delete p.functions[1].params[0].type,'$.functions[1].params[0]',['type'],[]],
+ ['unknown style',dashboardExample,p=>p.pages[0].root.style.css='private-diagnostic-value','$.pages[0].root.style',[],['css']],
+ ['unknown program source',dashboardExample,p=>p.script='private-diagnostic-value','$',[],['script']],
+ ['malformed literal expression',dashboardExample,p=>p.pages[0].root.children[0].text={literal:'private-diagnostic-value'},'$.pages[0].root.children[0].text',['lit'],['literal']]
+])test('v3 strict schema diagnoses '+name+' without reflecting values',()=>{
+ const p=factory();change(p);assert.throws(()=>validateProgram(p),e=>{assert.equal(e.code,'INVALID_PROGRAM_SCHEMA');assert.equal(e.details.path,path);assert.deepEqual(e.details.missingFields,missing);assert.deepEqual(e.details.unknownFields,unknown);assert.ok(missing.every(k=>e.details.requiredFields.includes(k)));assert.doesNotMatch(JSON.stringify({message:e.message,details:e.details}),/private-diagnostic-value/);return true;});
+});
+test('v3 schema diagnostic paths are isolated per validation and kernel instance',()=>{
+ const a=dashboardExample(),b=quizExample();delete a.design.mode;delete b.tests[0].expect[0].equals;
+ for(const [K,p,path]of [[createKernel(),a,'$.design'],[createKernel(),b,'$.tests[0].expect[0]'],[createKernel(),a,'$.design']])assert.throws(()=>K.validateProgram(p),e=>e.details.path===path);
+});
+test('v3 schema diagnostic output bounds unknown names and redacts credential-shaped keys',()=>{
+ const p=dashboardExample();p['AIza'+'x'.repeat(35)]='private-diagnostic-value';for(let n=0;n<12;n++)p['extra'+n]='private-diagnostic-value';
+ assert.throws(()=>validateProgram(p),e=>{assert.equal(e.details.unknownFieldCount,13);assert.equal(e.details.unknownFields.length,8);assert.equal(e.details.unknownFields[0],'[redacted property]');assert.doesNotMatch(JSON.stringify({message:e.message,details:e.details}),/AIzax|private-diagnostic-value/);return true;});
+});
+for(const [path,change]of [['$.design',p=>p.design=null],['$.pages[0].root',p=>p.pages[0].root=null],['$.pages[0].root.style',p=>p.pages[0].root.style=null]])test('v3 malformed object retains its parent path '+path,()=>{
+ const p=dashboardExample();change(p);assert.throws(()=>validateProgram(p),e=>e.code==='INVALID_PROGRAM_SCHEMA'&&e.details.path===path);
+});

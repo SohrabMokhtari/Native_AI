@@ -6,15 +6,19 @@
     "fail": 0
   },
   "currentTests": {
-    "pass": 387,
+    "pass": 409,
     "fail": 0
   },
   "syntaxModules": 38,
-  "tapSHA256": "10773991173ea6d616cd8f4da431c95b4e1518c40ea7b648c8c9c6596c513800",
-  "liveProvider": "Owner reported failed 503 and 200/200 budget-stop attempts. No successful live build; correction live rerun NOT RUN.",
+  "tapSHA256": "62bc5d2b2abe71653232a4bb03207e5af8495b33646d042efe856e77435850c2",
+  "liveProvider": "Owner reported failed 503, 200/200 accounting stop, and 200/200/200 schema/call-limit stop. No successful live build; schema-repair correction live rerun NOT RUN.",
   "deployedEndToEnd": "NOT RUN",
   "followupBaselineTests": {
     "pass": 375,
+    "fail": 0
+  },
+  "schemaRepairBaselineTests": {
+    "pass": 387,
     "fail": 0
   }
 }

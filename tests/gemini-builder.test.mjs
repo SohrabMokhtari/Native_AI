@@ -176,3 +176,33 @@ test('same mocked edit uses fewer calls and input bytes than frozen Groq baselin
   const a=await baseline({prompt:'Dark compact',current},env('groq'),old.fetcher),b=await buildComposable({prompt:'Dark compact',current},env('groq'),optimized.fetcher);
   assert.deepEqual(a.app,b.app);assert.equal(a.usage.calls,2);assert.equal(b.usage.calls,1);assert.ok(b.usage.inputBytes<a.usage.inputBytes);assert.ok(JSON.stringify(contextIndex(current,0)).length<JSON.stringify(current).length);
 });
+for(const provider of ['groq','gemini'])test(provider+': schema diagnostics guide full resubmission immediately after rejected creation',async()=>{
+ const invalid=dashboardExample();delete invalid.collections[0].fields[0].options;
+ const responses=[submit(provider,invalid),submit(provider)],requests=[];
+ const r=await buildComposable({prompt:'Build a task board'},env(provider),async(url,init)=>{
+   const body=JSON.parse(init.body);requests.push(body);
+   if(requests.length===2){const feedback=provider==='gemini'?body.contents.at(-1).parts[0].functionResponse.response:JSON.parse(body.messages.at(-1).content);
+     assert.equal(feedback.error.details.path,'$.collections[0].fields[0]');assert.deepEqual(feedback.error.details.missingFields,['options']);assert.equal(feedback.draftState.hasDraft,false);assert.equal(feedback.draftState.nextPayload,'program');assert.equal(feedback.budget.remainingCalls,2);assert.match(feedback.guidance,/complete corrected/);assert.match(feedback.guidance,/Do not send/);
+   }
+   return Response.json(responses.shift());
+ });
+ assert.equal(r.status,'ready');assert.equal(r.usage.calls,2);assert.equal(r.usage.repairs,1);assert.equal(r.trace[0].error.details.path,'$.collections[0].fields[0]');
+});
+test('edits after rejected creation report the required program envelope and preserve empty state',()=>{
+ const s=createConstructionSession(null),invalid=dashboardExample();delete invalid.tests;
+ assert.throws(()=>s.perform('submit_app',{payload:JSON.stringify({program:invalid}),message:'Done',revision:0}));
+ assert.equal(s.draft(),null);assert.deepEqual(s.status(),{hasDraft:false,revision:0,nextPayload:'program',checksPassed:null});
+ assert.throws(()=>s.perform('edit_app',{payload:JSON.stringify({edits:[{section:'design',id:'',value:{mode:'dark'}}]})}),e=>{assert.equal(e.code,'INVALID_TOOL_ARGUMENTS');assert.equal(e.details.path,'$.payload');assert.deepEqual(e.details.missingFields,['program']);return true;});assert.equal(s.draft(),null);
+});
+test('structurally valid failed checks retain a private draft for ID-based repair',()=>{
+ const s=createConstructionSession(null),p=dashboardExample();p.tests[0].expect[0].equals=999;
+ assert.throws(()=>s.perform('submit_app',{payload:JSON.stringify({program:p}),message:'Done',revision:0}),/checks failed/);
+ assert.deepEqual(s.status(),{hasDraft:true,revision:1,nextPayload:'edits',checksPassed:false});
+ const r=s.perform('submit_app',{payload:JSON.stringify({edits:[{section:'tests',id:'',value:dashboardExample().tests}]}),message:'Repaired',revision:1});assert.equal(r.status,'ready');
+});
+test('submit/inspect/edit failures report a call limit and actionable property paths',async()=>{
+ const invalid=dashboardExample();delete invalid.collections[0].fields[0].options;
+ const partial=dashboardExample();delete partial.collections;
+ const m=mock([submit('gemini',invalid),call('gemini','inspect_app',{}),call('gemini','edit_app',{payload:JSON.stringify({program:partial})})]);
+ await assert.rejects(buildComposable({prompt:'Build'},env(),m.fetcher),e=>{assert.equal(e.code,'AI_BUDGET_EXCEEDED');assert.equal(e.limit,'calls');assert.equal(e.usage.calls,3);assert.ok(e.usage.remainingCompletionBudget>0);assert.equal(e.trace[0].error.details.path,'$.collections[0].fields[0]');assert.deepEqual(e.trace[2].error.details.missingFields,['collections']);return true;});
+});

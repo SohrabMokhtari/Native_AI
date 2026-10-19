@@ -21,7 +21,7 @@ export async function evaluate(options,env={},fetcher=fetch){
   outer:for(const name of configs)for(const c of cases){
     if(calls>=options.maxCalls||reservedTokens+4096>options.maxTokens){stop='EVAL_BUDGET_EXHAUSTED';break outer;}
     const provider=name.endsWith('gemini')?'gemini':'groq',settings={AI_PROVIDER:'groq',AI_MODEL:'openai/gpt-oss-120b',GROQ_API_KEY:env.GROQ_API_KEY,GEMINI_API_KEY:env.GEMINI_API_KEY,V3_AI_PROVIDER:provider,V3_AI_MODEL:provider==='gemini'?'gemini-3.8-flash':'openai/gpt-oss-120b',V3_MAX_CALLS:'3'};
-    const start=c.start(),before=structuredClone(start),metrics=[],started=Date.now();let result,error=null,validation=null,failedUsage=null,failedTrace=[];
+    const start=c.start(),before=structuredClone(start),metrics=[],started=Date.now();let result,error=null,budgetLimit=null,validation=null,failedUsage=null,failedTrace=[];
     const measuredFetch=async(url,init)=>{
       const body=JSON.parse(init.body),allocation=body.max_completion_tokens??body.generationConfig.maxOutputTokens;
       if(calls>=options.maxCalls||reservedTokens+allocation>options.maxTokens){stop='EVAL_BUDGET_EXHAUSTED';throw new BuildError(stop,'Evaluation reservation budget exhausted.',422);}
@@ -31,10 +31,10 @@ export async function evaluate(options,env={},fetcher=fetch){
       // Buffer ONCE with the same byte bound. Do not tee/clone into an unbounded queue.
       const data=await boundedJSON(response,262144);metric.reported=normalizeUsage(provider,data);return Response.json(data);
     };
-    try{result=await (name==='baseline-groq'?baseline:buildComposable)({prompt:c.prompt,current:start.current,revision:start.revision,conversation:[]},settings,measuredFetch);validation=accept(c,result,start);}catch(e){failedUsage=e.usage;failedTrace=e.trace??[];error=e instanceof BuildError?e.code:e?.code?.startsWith('AI_')?e.code:'ACCEPTANCE_FAILED';}
+    try{result=await (name==='baseline-groq'?baseline:buildComposable)({prompt:c.prompt,current:start.current,revision:start.revision,conversation:[]},settings,measuredFetch);validation=accept(c,result,start);}catch(e){failedUsage=e.usage;failedTrace=e.trace??[];budgetLimit=e.limit??null;error=e instanceof BuildError?e.code:e?.code?.startsWith('AI_')?e.code:'ACCEPTANCE_FAILED';}
     const unchanged=JSON.stringify(start)===JSON.stringify(before);let preserved=unchanged;
     if(start.current&&result?.status==='ready'){try{const next=compatible(start.current,result.app,start.snapshot);preserved=JSON.stringify(next.data)===JSON.stringify(start.snapshot.data)&&Object.entries(start.snapshot.state).every(([k,v])=>JSON.stringify(next.state[k])===JSON.stringify(v));}catch{preserved=false;}}
-    results.push({configuration:name,case:c.id,success:!error,error,calls:metrics.length,inputBytes:metrics.reduce((s,m)=>s+m.inputBytes,0),elapsedMs:Date.now()-started,repairs:result?.usage?.repairs??failedUsage?.repairs??result?.trace?.filter(t=>!t.ok).length??null,dataPreserved:preserved,inputUnchanged:unchanged,exported:validation?.exported??false,metrics,buildUsage:result?.usage??failedUsage??null,trace:result?.trace??failedTrace});
+    results.push({configuration:name,case:c.id,success:!error,error,budgetLimit,calls:metrics.length,inputBytes:metrics.reduce((s,m)=>s+m.inputBytes,0),elapsedMs:Date.now()-started,repairs:result?.usage?.repairs??failedUsage?.repairs??result?.trace?.filter(t=>!t.ok).length??null,dataPreserved:preserved,inputUnchanged:unchanged,exported:validation?.exported??false,metrics,buildUsage:result?.usage??failedUsage??null,trace:result?.trace??failedTrace});
     if(error==='AI_QUOTA_EXCEEDED'){stop=error;break outer;}
     if(stop)break outer;
   }
