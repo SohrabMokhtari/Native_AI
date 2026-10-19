@@ -52,6 +52,28 @@ Schema repair feedback names the exact object path and missing/unexpected proper
 
 Provider errors: `AI_CREDENTIALS_REJECTED`/`AI_MODEL_UNAVAILABLE`/`AI_REQUEST_REJECTED` need operator attention; `AI_QUOTA_EXCEEDED` carries a bounded `Retry-After` hint, not a quota guarantee. `AI_TIMEOUT`, `AI_UNAVAILABLE`, `AI_INVALID_RESPONSE`, `AI_INCOMPLETE_RESPONSE`, `AI_RESPONSE_TOO_LARGE` and `AI_BUDGET_EXCEEDED` leave user data unchanged. Users may deliberately retry after resolving the cause; the builder does not do so automatically.
 
+### Separate test Worker configuration
+
+`wrangler.gemini-test.jsonc` targets `native-ai-gemini-test`, serves the same tracked studio assets and selects Gemini for v3 only. Its rate-limit namespaces `10711` / `10712` differ from the existing Worker's `10701` / `10702`, with unchanged request limits. No secret or Turnstile site key is included. Public/v3 enablement flags are absent, so a fresh test Worker fails closed. `keep_vars:true` preserves runtime variables added through the dashboard; values declared in the file remain authoritative on later deployments. The existing `wrangler.jsonc` is unchanged.
+
+Use these build settings for this test Worker:
+
+| Setting | Value |
+| --- | --- |
+| GitHub repository | `SohrabMokhtari/Native_AI` |
+| Deployment branch | `feat/gemini-efficient-builder` |
+| Project / Worker name | `native-ai-gemini-test` |
+| Root directory | Repository root (`/`) |
+| Build command | Leave empty |
+| Deploy command | `npx wrangler@4.151.2 deploy --config wrangler.gemini-test.jsonc` |
+| Preview command | `npx wrangler@4.151.2 preview --config wrangler.gemini-test.jsonc` |
+
+The test config exists on the feature branch. If the initial import form does not offer branch selection, create an empty `native-ai-gemini-test` Worker using the dashboard's Hello World option, then connect GitHub through that Worker's Settings > Build. Select the feature branch before the first repository deployment. Cloudflare calls this the test Worker's production branch; it does not change the existing `native-ai` Worker's branch. Never substitute the default configuration to bypass a missing-file error on `main`.
+
+After the test code is deployed, add encrypted `GEMINI_API_KEY` and `TURNSTILE_SECRET`, the public `TURNSTILE_SITE_KEY` for the test hostname, and runtime variables `PUBLIC_AI_ENABLED=true` / `COMPOSABLE_AI_ENABLED=true`. These belong under Settings > Variables and Secrets, not build-only secrets. The proof's hostname/action checks and both rate-limit bindings remain required. Do not copy a real key into this file or the build commands. Confirm `/api/v3/config` before requesting a browser build. To disable the test v3 route, set `COMPOSABLE_AI_ENABLED=false`; `keep_vars` retains that dashboard setting on later deployments.
+
+Cloudflare references, checked October 19, 2026: [Worker names and Git connection](https://developers.cloudflare.com/workers/ci-cd/builds/), [build fields and runtime/build variable separation](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/), [branch selection](https://developers.cloudflare.com/workers/ci-cd/builds/build-branches/), [shared rate-limit namespaces](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/), and [dashboard variable persistence](https://developers.cloudflare.com/workers/wrangler/configuration/#source-of-truth).
+
 ## Maintainer evaluation (optional developer tools)
 
 Dry command, no credentials or inference:

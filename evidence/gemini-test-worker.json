@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-19",
+  "target": "native-ai-gemini-test",
+  "configuration": "wrangler.gemini-test.jsonc",
+  "productionConfigurationUnchanged": true,
+  "rateLimitNamespaces": [
+    "10711",
+    "10712"
+  ],
+  "validation": {
+    "nodeTests": {
+      "pass": 430,
+      "fail": 0
+    },
+    "wranglerVersion": "4.151.2",
+    "localBundleDryRun": "PASS",
+    "trackedAssetFiles": 20,
+    "freshConfigMode": "disabled",
+    "freshConfigNetworkCalls": 0,
+    "privateLocalConfigCopied": false
+  },
+  "deployed": "NOT RUN by agent",
+  "cloudSecretsOrVariablesChanged": "NOT RUN by agent",
+  "branch": "feat/gemini-efficient-builder",
+  "cloudBrowserProviderRoundTrip": "NOT RUN"
+}

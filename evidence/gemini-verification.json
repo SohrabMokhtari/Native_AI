@@ -10,7 +10,7 @@
     "fail": 0
   },
   "syntaxModules": 38,
-  "tapSHA256": "1e48b336780f7bb6b7a7a83f060608e6ab307b14bbc9b9312766c114f4dc222d",
+  "tapSHA256": "bf529b9321d0b85d2beacd85f91017556406a81b7498f5e836beaf969b28212c",
   "liveProvider": "Owner-reported optimized-gemini/create PASS: two calls, one repair, two supplied tests plus independent acceptance/export, 47571 ms. Earlier failed attempts retained in documentation. No matched provider comparison. Timeout/progress follow-up live rerun NOT RUN; no agent live calls or credential reads.",
   "deployedEndToEnd": "NOT RUN",
   "followupBaselineTests": {
@@ -28,5 +28,11 @@
   "timeoutProgressBaselineTests": {
     "pass": 418,
     "fail": 0
+  },
+  "separateTestWorker": {
+    "configuration": "wrangler.gemini-test.jsonc",
+    "dryRun": "PASS",
+    "freshConfigMode": "disabled",
+    "deployed": "NOT RUN by agent"
   }
 }

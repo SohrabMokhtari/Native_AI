@@ -12,6 +12,8 @@ Current owner-reported live result: `optimized-gemini/create` succeeded with `ge
 
 The owner also reported silent waiting before that result. The prior CLI emitted only its final JSON, so 47.6 seconds could appear idle. It now emits startup/request status and five-second heartbeats on stderr, preserving JSON stdout. Separate synthetic probes reproduced three cancellation gaps when transport headers, body reads or cleanup ignore cancellation. The shared adapter and evaluation wrapper now enforce aborts around pending fetch/read operations, and cleanup never delays the primary error. Twelve new Node regressions, localhost native-fetch checks and actual workerd fixtures pass. This demonstrates corrected boundaries without identifying the exact cause of any earlier wait. Existing 30-second request and 55-second build limits, no-retry policy and frozen baseline source remain unchanged. No agent inference call or credential read was made; live verification after this timeout/progress change is NOT RUN.
 
+Owner setup follow-up: the Cloudflare import form reported that `native-ai` already exists and offered no branch selector. Added `wrangler.gemini-test.jsonc` for the separate `native-ai-gemini-test` target, with distinct rate-limit namespaces, Gemini v3 selection, dashboard-variable preservation and no keys/site key/enablement flags. The fresh target reports disabled without sending requests. Wrangler 4.151.2 `deploy --dry-run` successfully bundled the actual Worker plus 20 tracked asset files in an isolated workspace copy excluding private `.dev.vars`. Existing production configuration is unchanged. The full 430-test suite still passes. No deployment or cloud secret/configuration write was performed by the agent; cloud creation, branch connection and browser-provider verification remain owner-controlled and unverified.
+
 | Check | Actual result and scope |
 | --- | --- |
 | Baseline `node --test tests/*.test.mjs` | 286 passed, 0 failed |
@@ -52,6 +54,7 @@ The dry/live harness compares baseline Groq, optimized Groq and optimized Gemini
 - `evidence/gemini-accounting-replay.json`: owner-reported failed-attempt metadata and conservative bounds, with synthetic replay and live-verification limits stated.
 - `evidence/gemini-checks-replay.json`: latest owner-reported check/503 failure boundary and synthetic replay scope; the original failed assertion remains unknown.
 - `evidence/gemini-live-create.json`: first owner-reported successful live creation result, with unknown usage fields and scope limits preserved.
+- `evidence/gemini-test-worker.json`: local bundle/fail-closed checks for the separate test Worker; no deployment or private configuration used.
 - `evidence/gemini-eval-dry.json`: dry task/configuration manifest, no model outcomes.
 - `node --test tests/*.test.mjs`
 - `node scripts/eval-builder.mjs`
